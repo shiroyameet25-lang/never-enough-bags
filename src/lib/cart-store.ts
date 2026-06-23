@@ -3,6 +3,10 @@ import type { Product } from "./products";
 
 export type CartItem = { product: Product; qty: number };
 
+const EMPTY_CART: CartItem[] = [];
+const EMPTY_IDS: string[] = [];
+
+
 const KEY = "neeva-cart-v1";
 const listeners = new Set<() => void>();
 let items: CartItem[] = [];
