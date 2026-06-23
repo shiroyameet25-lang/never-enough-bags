@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { ArrowRight, Shield, Package, Truck, BadgeIndianRupee, Star, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
+import { LuxeHero } from "@/components/LuxeHero";
 import { PRODUCTS, BRANDS } from "@/lib/products";
-import heroBag from "@/assets/hero-bag.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,92 +19,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-function Hero() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 800], [0, 200]);
-  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
-
-  return (
-    <section ref={ref} className="relative h-[92vh] min-h-[640px] overflow-hidden bg-noir">
-      {/* Background image with parallax */}
-      <motion.div style={{ y }} className="absolute inset-0">
-        <img
-          src={heroBag}
-          alt="Luxury designer handbag"
-          width={1920}
-          height={1280}
-          className="w-full h-[120%] object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-noir via-noir/50 to-noir/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-noir/80 via-transparent to-noir/40" />
-      </motion.div>
-
-      {/* Content */}
-      <motion.div
-        style={{ opacity }}
-        className="relative z-10 h-full flex items-center"
-      >
-        <div className="max-w-7xl w-full mx-auto px-6 lg:px-10">
-          <div className="max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="tracking-luxe text-champagne mb-6"
-            >
-              · The Autumn Edit 2026 ·
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="text-display text-ivory text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] mb-4"
-            >
-              Where Luxury<br />
-              Meets <span className="shimmer-gold italic">Identity</span>
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="text-ivory/70 text-lg font-light leading-relaxed max-w-md mb-10"
-            >
-              Curated designer handbags from the world's most coveted maisons —
-              authenticated, hand-finished, delivered to your door.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 1 }}
-              className="flex flex-wrap gap-4"
-            >
-              <Link to="/new-arrivals" className="btn-gold inline-flex items-center gap-3">
-                Shop Now <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link to="/brands" className="inline-flex items-center gap-3 px-10 py-4 border border-ivory/40 text-ivory tracking-luxe hover:border-champagne hover:text-champagne transition-all">
-                Explore Brands
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 text-ivory/60 text-[0.65rem] tracking-[0.4em]"
-      >
-        <div className="flex flex-col items-center gap-3">
-          SCROLL
-          <div className="w-px h-12 bg-gradient-to-b from-champagne to-transparent" />
-        </div>
-      </motion.div>
-    </section>
-  );
-}
 
 function BrandStrip() {
   // duplicate for seamless marquee
