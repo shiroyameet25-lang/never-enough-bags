@@ -213,7 +213,7 @@ function ProductPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <h2 className="text-display text-3xl md:text-4xl text-center mb-12">You May Also Love</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+            {(related as typeof PRODUCTS).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </div>
       </section>

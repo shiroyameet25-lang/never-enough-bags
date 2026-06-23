@@ -3,7 +3,7 @@ import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 import { BRANDS } from "@/lib/products";
 
-export const Route = createFileRoute("/brands")({
+export const Route = createFileRoute("/brands/")({
   head: () => ({
     meta: [
       { title: "Designer Brands — NEEVA BAGS" },
