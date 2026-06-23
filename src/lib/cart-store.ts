@@ -67,7 +67,7 @@ export function useCart() {
   const snapshot = useSyncExternalStore(
     subscribe,
     () => items,
-    () => [] as CartItem[],
+    () => EMPTY_CART,
   );
   return {
     items: mounted ? snapshot : [],
@@ -113,7 +113,7 @@ export function useWishlist() {
       return () => wListeners.delete(cb);
     },
     () => wishlist,
-    () => [] as string[],
+    () => EMPTY_IDS,
   );
   return { ids: mounted ? snap : [], has: (id: string) => (mounted ? snap.includes(id) : false) };
 }
