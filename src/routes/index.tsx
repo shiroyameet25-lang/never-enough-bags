@@ -200,7 +200,7 @@ function Gallery() {
 function HomePage() {
   return (
     <Layout>
-      <Hero />
+      <LuxeHero />
       <BrandStrip />
       <NewArrivals />
       <WhyUs />

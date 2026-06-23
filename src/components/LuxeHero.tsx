@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring, type MotionValue } from "framer-motion";
 import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import bag1 from "@/assets/float-bag-1.png";
@@ -58,9 +58,9 @@ function FloatingBag({
   rotate?: number;
   delay?: number;
   yRange?: number;
-  parallaxY: ReturnType<typeof useTransform>;
-  mouseX: ReturnType<typeof useSpring>;
-  mouseY: ReturnType<typeof useSpring>;
+  parallaxY: MotionValue<number>;
+  mouseX: MotionValue<number>;
+  mouseY: MotionValue<number>;
   depth?: number;
 }) {
   const tx = useTransform(mouseX, (v) => v * 30 * depth);
