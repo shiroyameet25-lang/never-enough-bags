@@ -8,6 +8,7 @@ import { toggleWishlist, useWishlist } from "@/lib/cart-store";
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { has } = useWishlist();
   const liked = has(product.id);
+  const oos = product.stockQuantity <= 0;
 
   return (
     <motion.div
@@ -19,31 +20,41 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     >
       <Link to="/products/$id" params={{ id: product.id }} className="block">
         <div className="product-card relative bg-card overflow-hidden">
-          {/* Image */}
           <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-            <img
-              src={product.image}
-              alt={product.name}
-              loading="lazy"
-              width={800}
-              height={1000}
-              className="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
-            />
-            {/* Badge */}
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                loading="lazy"
+                width={800}
+                height={1000}
+                className="w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-display italic text-xl">
+                {product.brand}
+              </div>
+            )}
             {product.badge && (
               <div className="absolute top-4 left-4">
-                <span className={`tracking-luxe px-3 py-1.5 ${
-                  product.badge === "sale"
-                    ? "bg-noir text-ivory"
-                    : product.badge === "new"
-                    ? "bg-champagne text-noir"
-                    : "bg-ivory text-noir border border-noir/20"
-                }`}>
+                <span
+                  className={`tracking-luxe px-3 py-1.5 ${
+                    product.badge === "sale"
+                      ? "bg-noir text-ivory"
+                      : product.badge === "new"
+                      ? "bg-champagne text-noir"
+                      : "bg-ivory text-noir border border-noir/20"
+                  }`}
+                >
                   {product.badge === "sale" ? "Sale" : product.badge === "new" ? "New" : "Bestseller"}
                 </span>
               </div>
             )}
-            {/* Wishlist */}
+            {oos && (
+              <div className="absolute inset-0 bg-noir/40 flex items-center justify-center">
+                <span className="tracking-luxe bg-ivory text-noir px-4 py-2">Sold Out</span>
+              </div>
+            )}
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -55,14 +66,15 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               <Heart className={`w-4 h-4 ${liked ? "fill-noir text-noir" : "text-noir"}`} />
             </button>
           </div>
-          {/* Meta */}
           <div className="pt-5 pb-2 text-center">
             <div className="tracking-luxe text-champagne-deep mb-1.5">{product.brand}</div>
             <h3 className="text-display text-lg text-noir mb-2 leading-tight">{product.name}</h3>
             <div className="flex items-center justify-center gap-3 text-sm">
               <span className="text-noir font-medium">{formatINR(product.price)}</span>
               {product.originalPrice && (
-                <span className="text-muted-foreground line-through text-xs">{formatINR(product.originalPrice)}</span>
+                <span className="text-muted-foreground line-through text-xs">
+                  {formatINR(product.originalPrice)}
+                </span>
               )}
             </div>
           </div>

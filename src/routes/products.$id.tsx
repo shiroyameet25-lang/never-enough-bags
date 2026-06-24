@@ -1,26 +1,29 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { Heart, Minus, Plus, Shield, Truck, RotateCcw, Star, ChevronRight } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
-import { PRODUCTS, formatINR } from "@/lib/products";
+import { formatINR, productQueryOptions, productsQueryOptions } from "@/lib/products";
 import { addToCart, toggleWishlist, useWishlist } from "@/lib/cart-store";
 
 export const Route = createFileRoute("/products/$id")({
-  loader: ({ params }) => {
-    const product = PRODUCTS.find((p) => p.id === params.id);
+  loader: async ({ params, context }) => {
+    const product = await context.queryClient.ensureQueryData(productQueryOptions(params.id));
     if (!product) throw notFound();
-    const related = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
-    return { product, related };
+    context.queryClient.ensureQueryData(productsQueryOptions);
+    return { product };
   },
   head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.product.name} — ${loaderData?.product.brand} | NEEVA BAGS` },
-      { name: "description", content: loaderData?.product.description },
-      { property: "og:title", content: `${loaderData?.product.name} — NEEVA BAGS` },
-      { property: "og:description", content: loaderData?.product.description },
-      { property: "og:image", content: loaderData?.product.image },
-    ],
+    meta: loaderData?.product
+      ? [
+          { title: `${loaderData.product.name} — ${loaderData.product.brand} | NEEVA BAGS` },
+          { name: "description", content: loaderData.product.description },
+          { property: "og:title", content: `${loaderData.product.name} — NEEVA BAGS` },
+          { property: "og:description", content: loaderData.product.description },
+          { property: "og:image", content: loaderData.product.imageUrl },
+        ]
+      : [],
   }),
   component: ProductPage,
   notFoundComponent: () => (
@@ -42,15 +45,22 @@ const COLORS = [
 ];
 
 function ProductPage() {
-  const { product, related } = Route.useLoaderData();
+  const { id } = Route.useParams();
+  const { data: product } = useSuspenseQuery(productQueryOptions(id));
+  const { data: all = [] } = useQuery(productsQueryOptions);
   const [qty, setQty] = useState(1);
   const [size, setSize] = useState("Medium");
   const [color, setColor] = useState(COLORS[0].name);
   const [added, setAdded] = useState(false);
   const { has } = useWishlist();
+
+  if (!product) return null;
   const liked = has(product.id);
+  const related = all.filter((p) => p.id !== product.id).slice(0, 4);
+  const oos = product.stockQuantity <= 0;
 
   const handleAdd = () => {
+    if (oos) return;
     addToCart(product, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -58,7 +68,6 @@ function ProductPage() {
 
   return (
     <Layout>
-      {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8 pb-4 flex items-center gap-2 text-xs text-muted-foreground tracking-wider">
         <Link to="/" className="hover:text-champagne-deep">Home</Link>
         <ChevronRight className="w-3 h-3" />
@@ -68,27 +77,18 @@ function ProductPage() {
       </div>
 
       <section className="max-w-7xl mx-auto px-6 lg:px-10 py-10 grid lg:grid-cols-2 gap-12 lg:gap-20">
-        {/* Gallery */}
         <div className="space-y-4">
           <div className="aspect-[4/5] bg-muted overflow-hidden group">
             <img
-              src={product.image}
+              src={product.imageUrl}
               alt={product.name}
               width={1000}
               height={1250}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
           </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[product.image, product.image, product.image, product.image].map((src, i) => (
-              <div key={i} className={`aspect-square bg-muted overflow-hidden cursor-pointer border-2 ${i === 0 ? "border-champagne" : "border-transparent"}`}>
-                <img src={src} alt="" width={200} height={200} loading="lazy" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Details */}
         <div>
           <div className="tracking-luxe text-champagne-deep mb-3">{product.brand}</div>
           <h1 className="text-display text-4xl md:text-5xl text-noir mb-4 leading-tight">{product.name}</h1>
@@ -100,7 +100,7 @@ function ProductPage() {
             <span className="text-xs text-muted-foreground">(124 reviews)</span>
           </div>
 
-          <div className="flex items-center gap-4 mt-6 mb-8">
+          <div className="flex items-center gap-4 mt-6 mb-4">
             <span className="text-3xl text-display text-noir">{formatINR(product.price)}</span>
             {product.originalPrice && (
               <>
@@ -112,9 +112,18 @@ function ProductPage() {
             )}
           </div>
 
+          <div className="mb-8 text-sm">
+            {oos ? (
+              <span className="tracking-luxe text-destructive">Sold Out</span>
+            ) : product.stockQuantity <= 5 ? (
+              <span className="tracking-luxe text-champagne-deep">Only {product.stockQuantity} left in stock</span>
+            ) : (
+              <span className="tracking-luxe text-green-700">In Stock</span>
+            )}
+          </div>
+
           <p className="text-muted-foreground font-light leading-relaxed mb-8">{product.description}</p>
 
-          {/* Size */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <span className="tracking-luxe">Size</span>
@@ -135,7 +144,6 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Color */}
           <div className="mb-8">
             <div className="tracking-luxe mb-3">Color: <span className="text-champagne-deep">{color}</span></div>
             <div className="flex gap-3">
@@ -153,24 +161,19 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Qty */}
           <div className="mb-8">
             <div className="tracking-luxe mb-3">Quantity</div>
             <div className="inline-flex items-center border border-border">
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Minus className="w-4 h-4" /></button>
               <span className="w-12 text-center text-noir">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => setQty(Math.min(product.stockQuantity || 1, qty + 1))} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
             </div>
           </div>
 
-          {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <button onClick={handleAdd} className="btn-gold flex-1 flex items-center justify-center">
-              {added ? "✓ Added to Cart" : "Add to Cart"}
+            <button onClick={handleAdd} disabled={oos} className="btn-gold flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+              {oos ? "Sold Out" : added ? "✓ Added to Cart" : "Add to Cart"}
             </button>
-            <Link to="/cart" onClick={() => addToCart(product, qty)} className="btn-noir flex-1 text-center">
-              Buy Now
-            </Link>
             <button
               onClick={() => toggleWishlist(product.id)}
               className="w-14 h-14 border border-border flex items-center justify-center hover:border-champagne"
@@ -180,7 +183,6 @@ function ProductPage() {
             </button>
           </div>
 
-          {/* Assurances */}
           <div className="grid grid-cols-3 gap-4 py-6 border-y border-border">
             {[
               { icon: Shield, label: "Authenticated" },
@@ -194,7 +196,6 @@ function ProductPage() {
             ))}
           </div>
 
-          {/* Details */}
           <div className="mt-8 space-y-4">
             <div>
               <div className="tracking-luxe text-champagne-deep mb-1">Material</div>
@@ -208,15 +209,16 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* Related */}
-      <section className="py-20 bg-secondary">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <h2 className="text-display text-3xl md:text-4xl text-center mb-12">You May Also Love</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {(related as typeof PRODUCTS).map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+      {related.length > 0 && (
+        <section className="py-20 bg-secondary">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10">
+            <h2 className="text-display text-3xl md:text-4xl text-center mb-12">You May Also Love</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+              {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </Layout>
   );
 }

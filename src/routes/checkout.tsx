@@ -99,7 +99,7 @@ function CheckoutPage() {
             <div className="space-y-3 mb-6">
               {items.map(({ product, qty }) => (
                 <div key={product.id} className="flex gap-3 text-sm">
-                  <img src={product.image} alt="" width={50} height={60} className="w-12 h-15 object-cover bg-muted" />
+                  <img src={product.imageUrl} alt="" width={50} height={60} className="w-12 h-15 object-cover bg-muted" />
                   <div className="flex-1">
                     <div className="line-clamp-1">{product.name}</div>
                     <div className="text-xs text-muted-foreground">Qty {qty}</div>

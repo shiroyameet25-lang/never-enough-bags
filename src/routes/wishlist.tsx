@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
 import { useWishlist } from "@/lib/cart-store";
-import { PRODUCTS } from "@/lib/products";
+import { productsQueryOptions } from "@/lib/products";
 
 export const Route = createFileRoute("/wishlist")({
   head: () => ({ meta: [{ title: "Wishlist — NEEVA BAGS" }] }),
@@ -12,7 +13,8 @@ export const Route = createFileRoute("/wishlist")({
 
 function WishlistPage() {
   const { ids } = useWishlist();
-  const items = PRODUCTS.filter((p) => ids.includes(p.id));
+  const { data: products = [] } = useQuery(productsQueryOptions);
+  const items = products.filter((p) => ids.includes(p.id));
   return (
     <Layout>
       <section className="py-16 bg-background text-center">
