@@ -1,14 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
-import { GoldDivider } from "@/components/Divider";
-import { BRANDS, PRODUCTS } from "@/lib/products";
+import { BRANDS, productsQueryOptions } from "@/lib/products";
 
 export const Route = createFileRoute("/brands/$brand")({
-  loader: ({ params }) => {
+  loader: ({ params, context }) => {
     const brand = BRANDS.find((b) => b.slug === params.brand);
     if (!brand) throw notFound();
+    context.queryClient.ensureQueryData(productsQueryOptions);
     return { brand };
   },
   head: ({ loaderData }) => ({
@@ -39,24 +40,22 @@ const PRICE_RANGES = [
 
 function BrandPage() {
   const { brand } = Route.useLoaderData();
+  const { data: allProducts = [] } = useQuery(productsQueryOptions);
   const [type, setType] = useState<(typeof TYPES)[number]>("all");
   const [priceIdx, setPriceIdx] = useState(0);
 
   const products = useMemo(() => {
-    const all = PRODUCTS.filter((p) => p.brandSlug === brand.slug);
-    // If empty (mock data), fall back to all so collection always has visuals
-    const pool = all.length ? all : PRODUCTS;
-    return pool.filter((p) => {
+    const inBrand = allProducts.filter((p) => p.brandSlug === brand.slug);
+    return inBrand.filter((p) => {
       if (type !== "all" && p.type !== type) return false;
       const r = PRICE_RANGES[priceIdx];
       if (p.price < r.min || p.price > r.max) return false;
       return true;
     });
-  }, [brand.slug, type, priceIdx]);
+  }, [brand.slug, type, priceIdx, allProducts]);
 
   return (
     <Layout>
-      {/* Brand banner */}
       <section className="relative py-28 bg-gradient-to-br from-noir via-noir to-[oklch(0.18_0.02_60)] text-ivory text-center overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_50%,var(--champagne)_0%,transparent_70%)]" />
         <div className="relative max-w-3xl mx-auto px-6">
@@ -70,7 +69,6 @@ function BrandPage() {
         </div>
       </section>
 
-      {/* Filters + products */}
       <section className="py-16 bg-background">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="flex flex-wrap gap-6 mb-12 pb-6 border-b border-border">
@@ -106,7 +104,8 @@ function BrandPage() {
 
           {products.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">
-              No pieces match these filters. <button onClick={() => { setType("all"); setPriceIdx(0); }} className="text-champagne-deep underline ml-2">Reset</button>
+              No {brand.name} pieces match these filters yet.
+              <button onClick={() => { setType("all"); setPriceIdx(0); }} className="text-champagne-deep underline ml-2">Reset</button>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">

@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, Package, Truck, BadgeIndianRupee, Star, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
 import { LuxeHero } from "@/components/LuxeHero";
-import { PRODUCTS, BRANDS } from "@/lib/products";
+import { BRANDS, productsQueryOptions } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,12 +17,11 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Authenticated luxury designer handbags, delivered across India." },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(productsQueryOptions),
   component: HomePage,
 });
 
-
 function BrandStrip() {
-  // duplicate for seamless marquee
   const items = [...BRANDS, ...BRANDS];
   return (
     <section className="py-24 bg-ivory overflow-hidden">
@@ -32,11 +32,9 @@ function BrandStrip() {
           Fifteen of the world's most desirable maisons, curated for the discerning Indian collector.
         </p>
       </div>
-
       <div className="relative">
         <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-ivory to-transparent z-10" />
         <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-ivory to-transparent z-10" />
-
         <div className="flex animate-marquee gap-16 whitespace-nowrap">
           {items.map((brand, i) => (
             <Link
@@ -55,7 +53,8 @@ function BrandStrip() {
 }
 
 function NewArrivals() {
-  const items = PRODUCTS.slice(0, 8);
+  const { data: products = [] } = useQuery(productsQueryOptions);
+  const items = products.slice(0, 8);
   return (
     <section className="py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -66,9 +65,13 @@ function NewArrivals() {
             Pieces just landed — limited stock from this season's most coveted releases.
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {items.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-        </div>
+        {items.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">Catalog launching soon.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+            {items.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        )}
         <div className="text-center mt-16">
           <Link to="/new-arrivals" className="btn-outline-noir inline-flex items-center gap-3">
             View All <ArrowRight className="w-4 h-4" />
@@ -122,21 +125,9 @@ function WhyUs() {
 }
 
 const REVIEWS = [
-  {
-    name: "Aanya Mehta",
-    city: "Mumbai",
-    text: "The Chanel mini I purchased arrived in pristine condition with the authenticity card. Truly the best luxury shopping experience in India.",
-  },
-  {
-    name: "Priya Kapoor",
-    city: "Delhi",
-    text: "I was hesitant about buying online but NEEVA exceeded every expectation. The packaging alone made me feel like royalty.",
-  },
-  {
-    name: "Sneha Reddy",
-    city: "Bangalore",
-    text: "Three orders in and I'm still impressed. They sourced a Dior Saddle I'd been hunting for months. Customer service is unmatched.",
-  },
+  { name: "Aanya Mehta", city: "Mumbai", text: "The Chanel mini I purchased arrived in pristine condition with the authenticity card. Truly the best luxury shopping experience in India." },
+  { name: "Priya Kapoor", city: "Delhi", text: "I was hesitant about buying online but NEEVA exceeded every expectation. The packaging alone made me feel like royalty." },
+  { name: "Sneha Reddy", city: "Bangalore", text: "Three orders in and I'm still impressed. They sourced a Dior Saddle I'd been hunting for months. Customer service is unmatched." },
 ];
 
 function Testimonials() {
@@ -169,7 +160,9 @@ function Testimonials() {
 }
 
 function Gallery() {
-  const images = PRODUCTS.slice(0, 6);
+  const { data: products = [] } = useQuery(productsQueryOptions);
+  const images = products.slice(0, 6);
+  if (images.length === 0) return null;
   return (
     <section className="py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-12 text-center">
@@ -183,7 +176,7 @@ function Gallery() {
         {images.map((p) => (
           <a key={p.id} href="#" className="block aspect-square overflow-hidden group">
             <img
-              src={p.image}
+              src={p.imageUrl}
               alt={p.name}
               loading="lazy"
               width={400}

@@ -6,8 +6,7 @@ export type CartItem = { product: Product; qty: number };
 const EMPTY_CART: CartItem[] = [];
 const EMPTY_IDS: string[] = [];
 
-
-const KEY = "neeva-cart-v1";
+const KEY = "neeva-cart-v2";
 const listeners = new Set<() => void>();
 let items: CartItem[] = [];
 let hydrated = false;
@@ -48,11 +47,6 @@ export function updateQty(id: string, qty: number) {
   persist();
 }
 
-export function getItems() {
-  if (!hydrated) load();
-  return items;
-}
-
 function subscribe(cb: () => void) {
   listeners.add(cb);
   return () => listeners.delete(cb);
@@ -64,11 +58,7 @@ export function useCart() {
     if (!hydrated) load();
     setMounted(true);
   }, []);
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    () => items,
-    () => EMPTY_CART,
-  );
+  const snapshot = useSyncExternalStore(subscribe, () => items, () => EMPTY_CART);
   return {
     items: mounted ? snapshot : [],
     count: mounted ? snapshot.reduce((s, i) => s + i.qty, 0) : 0,
@@ -76,7 +66,6 @@ export function useCart() {
   };
 }
 
-// Wishlist (lightweight)
 const WKEY = "neeva-wishlist-v1";
 const wListeners = new Set<() => void>();
 let wishlist: string[] = [];
