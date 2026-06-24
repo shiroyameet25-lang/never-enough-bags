@@ -191,6 +191,17 @@
   }
 }
 
+@utility form-input {
+  width: 100%;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  padding: 0.625rem 0;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+  &:focus { border-color: var(--champagne); }
+}
+
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
