@@ -58,9 +58,9 @@ function ContactPage() {
             <h2 className="text-display text-3xl mb-2">Visit & Connect</h2>
             <div className="space-y-6">
               {[
-                { icon: MapPin, title: "Boutique", value: "Ring Road, Surat, Gujarat 395002" },
-                { icon: Phone, title: "Call", value: "+91 98765 43210" },
-                { icon: Mail, title: "Email", value: "care@neevabags.in" },
+                { icon: MapPin, title: "Boutique", value: "Bhakti Nandan Sector, Mota Varacha, Surat, Gujarat - 394101" },
+                { icon: Phone, title: "Call", value: "+91 88669 65656" },
+                { icon: Mail, title: "Email", value: "neevabag@gmail.com" },
                 { icon: Clock, title: "Hours", value: "Mon–Sat · 10 AM to 8 PM" },
               ].map((c) => (
                 <div key={c.title} className="flex items-start gap-4">
