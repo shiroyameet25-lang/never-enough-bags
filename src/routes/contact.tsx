@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 
