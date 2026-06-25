@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -24,6 +25,11 @@ import { Route as BrandsBrandRouteImport } from './routes/brands.$brand'
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewArrivalsRoute = NewArrivalsRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
   '/brands/$brand': typeof BrandsBrandRoute
   '/products/$id': typeof ProductsIdRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
   '/brands/$brand': typeof BrandsBrandRoute
   '/products/$id': typeof ProductsIdRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
   '/brands/$brand': typeof BrandsBrandRoute
   '/products/$id': typeof ProductsIdRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/new-arrivals'
+    | '/search'
     | '/wishlist'
     | '/brands/$brand'
     | '/products/$id'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/new-arrivals'
+    | '/search'
     | '/wishlist'
     | '/brands/$brand'
     | '/products/$id'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/new-arrivals'
+    | '/search'
     | '/wishlist'
     | '/brands/$brand'
     | '/products/$id'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
+  SearchRoute: typeof SearchRoute
   WishlistRoute: typeof WishlistRoute
   BrandsBrandRoute: typeof BrandsBrandRoute
   ProductsIdRoute: typeof ProductsIdRoute
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/wishlist'
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-arrivals': {
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   NewArrivalsRoute: NewArrivalsRoute,
+  SearchRoute: SearchRoute,
   WishlistRoute: WishlistRoute,
   BrandsBrandRoute: BrandsBrandRoute,
   ProductsIdRoute: ProductsIdRoute,
