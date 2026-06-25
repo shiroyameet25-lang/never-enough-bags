@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 
@@ -58,9 +58,9 @@ function ContactPage() {
             <h2 className="text-display text-3xl mb-2">Visit & Connect</h2>
             <div className="space-y-6">
               {[
-                { icon: MapPin, title: "Boutique", value: "Ring Road, Surat, Gujarat 395002" },
-                { icon: Phone, title: "Call", value: "+91 98765 43210" },
-                { icon: Mail, title: "Email", value: "care@neevabags.in" },
+                { icon: MapPin, title: "Boutique", value: "Bhakti Nandan Sector, Mota Varacha, Surat, Gujarat - 394101" },
+                { icon: Phone, title: "Call", value: "+91 88669 65656" },
+                { icon: Mail, title: "Email", value: "neevabag@gmail.com" },
                 { icon: Clock, title: "Hours", value: "Mon–Sat · 10 AM to 8 PM" },
               ].map((c) => (
                 <div key={c.title} className="flex items-start gap-4">
@@ -76,16 +76,38 @@ function ContactPage() {
             </div>
 
             <a
-              href="https://wa.me/919876543210"
+              href="https://wa.me/918866965656"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-3 w-full bg-[#25D366] text-white py-4 tracking-luxe hover:opacity-90"
             >
               <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
             </a>
 
+            <div className="flex gap-3">
+              <a
+                href="https://www.instagram.com/neeva_bag?igsh=MW5zMnBjMW9uY3Flag=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white py-3 tracking-luxe hover:opacity-90"
+              >
+                <Instagram className="w-5 h-5" /> Instagram
+              </a>
+              <a
+                href="https://www.facebook.com/share/18xyDnuS8g/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#1877F2] text-white py-3 tracking-luxe hover:opacity-90"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Facebook
+              </a>
+            </div>
+
             {/* Map embed */}
             <div className="aspect-[16/9] overflow-hidden border border-border">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29765.31!2d72.83!3d21.17!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be04dded4727171%3A0x35dac8e91eb50d8d!2sSurat%2C%20Gujarat!5e0!3m2!1sen!2sin!4v1700000000"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3720.0!2d72.88!3d21.24!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDE0JzI0LjAiTiA3MsKwNTInNDguMCJF!5e0!3m2!1sen!2sin!4v1700000000"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

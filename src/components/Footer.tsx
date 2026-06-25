@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Facebook, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -15,11 +15,24 @@ export function Footer() {
               Where craftsmanship meets contemporary elegance.
             </p>
             <div className="flex gap-4 mt-8">
-              {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 border border-ivory/20 rounded-full flex items-center justify-center hover:bg-champagne hover:border-champagne hover:text-noir transition-all" aria-label="Social">
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
+              <a
+                href="https://www.instagram.com/neeva_bag?igsh=MW5zMnBjMW9uY3Flag=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 border border-ivory/20 rounded-full flex items-center justify-center hover:bg-champagne hover:border-champagne hover:text-noir transition-all"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.facebook.com/share/18xyDnuS8g/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 border border-ivory/20 rounded-full flex items-center justify-center hover:bg-champagne hover:border-champagne hover:text-noir transition-all"
+                aria-label="Facebook"
+              >
+                <Facebook className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
@@ -48,15 +61,15 @@ export function Footer() {
           <div>
             <h4 className="tracking-luxe text-champagne mb-6">Contact</h4>
             <ul className="space-y-3 text-sm font-light text-ivory/70">
-              <li className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> Surat, Gujarat, India</li>
-              <li className="flex items-start gap-3"><Phone className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> +91 98765 43210</li>
-              <li className="flex items-start gap-3"><Mail className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> care@neevabags.in</li>
+              <li className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> Bhakti Nandan Sector, Mota Varacha, Surat, Gujarat - 394101</li>
+              <li className="flex items-start gap-3"><Phone className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> +91 88669 65656</li>
+              <li className="flex items-start gap-3"><Mail className="w-4 h-4 mt-0.5 text-champagne shrink-0" /> neevabag@gmail.com</li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-ivory/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-ivory/50 font-light">
-          <div>© 2026 NEEVA BAGS · GSTIN: 24AABCN1234F1Z5</div>
+          <div>© 2026 NEEVA BAGS · GSTIN: 24HIUPS5141B1Z1</div>
           <div className="flex items-center gap-3">
             <span className="tracking-luxe text-champagne/70">We Accept:</span>
             <span>VISA</span>
