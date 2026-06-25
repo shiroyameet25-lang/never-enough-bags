@@ -57,9 +57,9 @@ export function Navbar() {
                   <Shield className="w-4 h-4" /> Admin
                 </Link>
               )}
-              <button className="text-noir hover:text-champagne-deep transition-colors" aria-label="Search">
+              <Link to="/search" className="text-noir hover:text-champagne-deep transition-colors" aria-label="Search">
                 <Search className="w-[18px] h-[18px]" />
-              </button>
+              </Link>
               <Link to="/account" className="hidden md:block text-noir hover:text-champagne-deep transition-colors" aria-label="Account">
                 <User className="w-[18px] h-[18px]" />
               </Link>
