@@ -93,10 +93,31 @@ export async function fetchProduct(id: string): Promise<Product | null> {
   return data ? mapProduct(data as ProductRow) : null;
 }
 
+export async function searchProducts(term: string): Promise<Product[]> {
+  const q = term.trim();
+  let query = supabase.from("products").select("*").order("created_at", { ascending: false });
+  if (q.length > 0) {
+    const esc = q.replace(/[%,()]/g, " ").trim();
+    const pattern = `%${esc}%`;
+    query = query.or(
+      `name.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern},color.ilike.${pattern},brand.ilike.${pattern}`,
+    );
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as ProductRow[]).map(mapProduct);
+}
+
 export const productsQueryOptions = queryOptions({
   queryKey: ["products"],
   queryFn: fetchProducts,
 });
+
+export const productsSearchQueryOptions = (term: string) =>
+  queryOptions({
+    queryKey: ["products", "search", term.trim().toLowerCase()],
+    queryFn: () => searchProducts(term),
+  });
 
 export const productQueryOptions = (id: string) =>
   queryOptions({
