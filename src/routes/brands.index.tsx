@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 import { BRANDS } from "@/lib/products";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/brands/")({
   head: () => ({
