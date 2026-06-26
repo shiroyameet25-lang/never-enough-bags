@@ -1,22 +1,31 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const BRANDS = [
-  { slug: "gucci", name: "Gucci" },
-  { slug: "louis-vuitton", name: "Louis Vuitton" },
-  { slug: "dior", name: "Dior" },
-  { slug: "prada", name: "Prada" },
-  { slug: "hermes", name: "Hermès" },
-  { slug: "chanel", name: "Chanel" },
-  { slug: "ysl", name: "YSL" },
-  { slug: "fendi", name: "Fendi" },
-  { slug: "burberry", name: "Burberry" },
-  { slug: "coach", name: "Coach" },
-  { slug: "michael-kors", name: "Michael Kors" },
-  { slug: "celine", name: "Celine" },
-  { slug: "bvlgari", name: "Bvlgari" },
-  { slug: "tory-burch", name: "Tory Burch" },
-  { slug: "miu-miu", name: "Miu Miu" },
+// Wordmark style hints — typography-only rendering to avoid using trademarked logo files.
+// `style` controls the visual treatment in the brand grid.
+export type BrandStyle = "serif" | "sans" | "mono" | "italic";
+
+export const BRANDS: { slug: string; name: string; tagline?: string; style: BrandStyle }[] = [
+  { slug: "coach", name: "COACH", tagline: "New York 1941", style: "serif" },
+  { slug: "dior", name: "Dior", tagline: "Christian Dior · Paris", style: "serif" },
+  { slug: "ysl", name: "SAINT LAURENT", tagline: "Yves Saint Laurent", style: "sans" },
+  { slug: "celine", name: "CELINE", tagline: "Paris", style: "sans" },
+  { slug: "burberry", name: "BURBERRY", tagline: "London England", style: "sans" },
+  { slug: "guess", name: "GUESS", tagline: "Los Angeles", style: "sans" },
+  { slug: "bvlgari", name: "BVLGARI", tagline: "Roma", style: "serif" },
+  { slug: "hermes", name: "HERMÈS", tagline: "Paris", style: "serif" },
+  { slug: "aldo", name: "ALDO", tagline: "Since 1972", style: "sans" },
+  { slug: "louis-vuitton", name: "LOUIS VUITTON", tagline: "Malletier à Paris", style: "serif" },
+  { slug: "gucci", name: "GUCCI", tagline: "Firenze 1921", style: "serif" },
+  { slug: "prada", name: "PRADA", tagline: "Milano", style: "serif" },
+  { slug: "michael-kors", name: "MICHAEL KORS", tagline: "New York", style: "sans" },
+  { slug: "charles-keith", name: "CHARLES & KEITH", tagline: "Singapore", style: "sans" },
+  { slug: "fendi", name: "FENDI", tagline: "Roma 1925", style: "sans" },
+  { slug: "miu-miu", name: "Miu Miu", tagline: "Milano", style: "italic" },
+  { slug: "zolee", name: "ZOLEE", tagline: "Imported", style: "serif" },
+  { slug: "diesel", name: "DIESEL", tagline: "Only the Brave", style: "sans" },
+  { slug: "tommy-hilfiger", name: "TOMMY HILFIGER", tagline: "Est. 1985", style: "sans" },
+  { slug: "tory-burch", name: "TORY BURCH", tagline: "New York", style: "serif" },
 ];
 
 export type ProductRow = {
