@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
 import { LuxeHero } from "@/components/LuxeHero";
 import { BRANDS, productsQueryOptions } from "@/lib/products";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,28 +23,27 @@ export const Route = createFileRoute("/")({
 });
 
 function BrandStrip() {
-  const items = [...BRANDS, ...BRANDS];
   return (
-    <section className="py-24 bg-ivory overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-12 text-center">
+    <section className="py-24 bg-ivory">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-14 text-center">
         <GoldDivider label="Maisons We Carry" />
         <h2 className="text-display text-4xl md:text-5xl mt-6 mb-4">Shop by Brand</h2>
         <p className="text-muted-foreground max-w-xl mx-auto font-light">
-          Fifteen of the world's most desirable maisons, curated for the discerning Indian collector.
+          Twenty of the world's most desirable maisons, curated for the discerning Indian collector.
         </p>
       </div>
-      <div className="relative">
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-ivory to-transparent z-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-ivory to-transparent z-10" />
-        <div className="flex animate-marquee gap-16 whitespace-nowrap">
-          {items.map((brand, i) => (
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-px bg-border border border-border">
+          {BRANDS.map((brand) => (
             <Link
-              key={`${brand.slug}-${i}`}
+              key={brand.slug}
               to="/brands/$brand"
               params={{ brand: brand.slug }}
-              className="text-display text-3xl md:text-4xl text-noir/40 hover:text-champagne-deep transition-colors tracking-[0.15em] italic"
+              className="relative aspect-[5/3] bg-ivory flex items-center justify-center px-4 hover:bg-card hover:shadow-[var(--shadow-gold-glow)] transition-all duration-500 group overflow-hidden"
             >
-              {brand.name}
+              <span className="absolute top-2.5 left-2.5 right-2.5 h-px bg-champagne/0 group-hover:bg-champagne/60 transition-colors duration-500" />
+              <span className="absolute bottom-2.5 left-2.5 right-2.5 h-px bg-champagne/0 group-hover:bg-champagne/60 transition-colors duration-500" />
+              <BrandLogo name={brand.name} tagline={brand.tagline} style={brand.style} size="sm" />
             </Link>
           ))}
         </div>
@@ -51,6 +51,7 @@ function BrandStrip() {
     </section>
   );
 }
+
 
 function NewArrivals() {
   const { data: products = [] } = useQuery(productsQueryOptions);

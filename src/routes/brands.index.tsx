@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 import { BRANDS } from "@/lib/products";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/brands/")({
   head: () => ({
@@ -29,22 +30,20 @@ function BrandsPage() {
 
       <section className="py-20 bg-background">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-border border border-border">
             {BRANDS.map((brand) => (
               <Link
                 key={brand.slug}
                 to="/brands/$brand"
                 params={{ brand: brand.slug }}
-                className="aspect-[4/3] bg-card flex items-center justify-center border border-border hover:border-champagne hover:shadow-[var(--shadow-gold-glow)] transition-all duration-500 group"
+                className="relative aspect-[4/3] bg-ivory flex items-center justify-center px-6 hover:bg-card hover:shadow-[var(--shadow-gold-glow)] transition-all duration-500 group overflow-hidden"
               >
-                <div className="text-center px-4">
-                  <div className="text-display italic text-2xl md:text-3xl text-noir group-hover:text-champagne-deep transition-colors">
-                    {brand.name}
-                  </div>
-                  <div className="tracking-luxe text-champagne-deep/0 group-hover:text-champagne-deep/80 transition-all mt-2 text-[0.6rem]">
-                    Explore →
-                  </div>
-                </div>
+                <span className="absolute top-3 left-3 right-3 h-px bg-champagne/0 group-hover:bg-champagne/60 transition-colors duration-500" />
+                <span className="absolute bottom-3 left-3 right-3 h-px bg-champagne/0 group-hover:bg-champagne/60 transition-colors duration-500" />
+                <BrandLogo name={brand.name} tagline={brand.tagline} style={brand.style} size="md" />
+                <span className="absolute bottom-3 right-4 text-[0.55rem] tracking-[0.3em] uppercase text-champagne-deep opacity-0 group-hover:opacity-100 transition-opacity">
+                  Explore →
+                </span>
               </Link>
             ))}
           </div>
