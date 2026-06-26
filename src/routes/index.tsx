@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
 import { LuxeHero } from "@/components/LuxeHero";
 import { BRANDS, productsQueryOptions } from "@/lib/products";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
