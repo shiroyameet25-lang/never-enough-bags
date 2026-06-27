@@ -8,7 +8,7 @@ import { toggleWishlist, useWishlist } from "@/lib/cart-store";
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { has } = useWishlist();
   const liked = has(product.id);
-  const oos = product.stockQuantity <= 0;
+  const oos = !product.inStock;
 
   return (
     <motion.div

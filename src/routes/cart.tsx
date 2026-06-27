@@ -46,7 +46,7 @@ function CartPage() {
                       <div>
                         <div className="tracking-luxe text-champagne-deep mb-1">{product.brand}</div>
                         <Link to="/products/$id" params={{ id: product.id }} className="text-display text-xl text-noir hover:text-champagne-deep">{product.name}</Link>
-                        <div className="text-xs text-muted-foreground mt-1">{product.color} · Medium</div>
+                        <div className="text-xs text-muted-foreground mt-1">{product.brand} · Medium</div>
                       </div>
                       <button onClick={() => removeFromCart(product.id)} className="text-muted-foreground hover:text-noir" aria-label="Remove">
                         <X className="w-4 h-4" />
