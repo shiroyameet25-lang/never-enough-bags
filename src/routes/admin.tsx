@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Upload, X, LogOut } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload, X, LogOut, GripVertical } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,9 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+// Long-lived signed URL: 10 years
+const SIGNED_URL_EXPIRY = 60 * 60 * 24 * 365 * 10;
+
 type FormState = {
   id?: string;
   name: string;
@@ -27,13 +30,11 @@ type FormState = {
   price: string;
   discount_price: string;
   description: string;
-  stock_quantity: string;
+  in_stock: boolean;
   type: string;
-  color: string;
-  material: string;
   dimensions: string;
   badge: string;
-  image_url: string;
+  image_urls: string[];
 };
 
 const EMPTY_FORM: FormState = {
@@ -43,13 +44,11 @@ const EMPTY_FORM: FormState = {
   price: "",
   discount_price: "",
   description: "",
-  stock_quantity: "0",
+  in_stock: true,
   type: "tote",
-  color: "",
-  material: "",
   dimensions: "",
   badge: "",
-  image_url: "",
+  image_urls: [],
 };
 
 function AdminPage() {
@@ -77,17 +76,7 @@ function AdminPage() {
         <section className="py-32 max-w-xl mx-auto px-6 text-center">
           <h1 className="text-display text-5xl mb-4">Restricted</h1>
           <p className="text-muted-foreground mb-8 font-light">
-            This area is reserved for administrators. Your account ID:
-          </p>
-          <code className="block px-4 py-3 bg-muted text-xs break-all mb-8 select-all">
-            {user.id}
-          </code>
-          <p className="text-sm text-muted-foreground font-light mb-8">
-            To get admin access, run this in the database:
-            <br />
-            <code className="text-xs">
-              INSERT INTO user_roles (user_id, role) VALUES ('{user.id}', 'admin');
-            </code>
+            This area is reserved for administrators.
           </p>
           <Link to="/" className="btn-outline-noir">← Back to Home</Link>
         </section>
@@ -142,13 +131,11 @@ function AdminDashboard() {
       price: String(p.originalPrice ?? p.price),
       discount_price: p.originalPrice ? String(p.price) : "",
       description: p.description,
-      stock_quantity: String(p.stockQuantity),
+      in_stock: p.inStock,
       type: p.type,
-      color: p.color,
-      material: p.material,
       dimensions: p.dimensions,
       badge: p.badge ?? "",
-      image_url: p.imageUrl,
+      image_urls: p.imageUrls,
     });
   };
 
@@ -164,7 +151,7 @@ function AdminDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setEditing({ ...EMPTY_FORM })} className="btn-gold inline-flex items-center gap-2">
+            <button onClick={() => setEditing({ ...EMPTY_FORM, image_urls: [] })} className="btn-gold inline-flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Product
             </button>
             <button onClick={handleSignOut} className="border border-ivory/30 px-4 py-3 tracking-luxe text-xs hover:bg-ivory/10 inline-flex items-center gap-2">
@@ -214,8 +201,8 @@ function AdminDashboard() {
                       )}
                     </td>
                     <td className="py-3 pr-4 text-sm">
-                      <span className={p.stockQuantity === 0 ? "text-destructive" : p.stockQuantity <= 5 ? "text-champagne-deep" : ""}>
-                        {p.stockQuantity}
+                      <span className={p.inStock ? "text-green-700" : "text-destructive"}>
+                        {p.inStock ? "In Stock" : "Out of Stock"}
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-right">
@@ -255,6 +242,20 @@ function AdminDashboard() {
   );
 }
 
+async function uploadAndSign(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage
+    .from("product-images")
+    .upload(path, file, { cacheControl: "3600", upsert: false });
+  if (error) throw error;
+  const { data, error: signErr } = await supabase.storage
+    .from("product-images")
+    .createSignedUrl(path, SIGNED_URL_EXPIRY);
+  if (signErr || !data) throw signErr ?? new Error("Failed to sign URL");
+  return data.signedUrl;
+}
+
 function ProductForm({
   state,
   onClose,
@@ -267,6 +268,7 @@ function ProductForm({
   const [form, setForm] = useState<FormState>(state);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pasteUrl, setPasteUrl] = useState("");
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -276,23 +278,37 @@ function ProductForm({
     setForm((f) => ({ ...f, brand: b.name, brand_slug: b.slug }));
   };
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (files: FileList) => {
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage
-        .from("product-images")
-        .upload(path, file, { cacheControl: "3600", upsert: false });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
-      set("image_url", pub.publicUrl);
-      toast.success("Image uploaded");
+      const urls = await Promise.all(Array.from(files).map(uploadAndSign));
+      setForm((f) => ({ ...f, image_urls: [...f.image_urls, ...urls] }));
+      toast.success(`${urls.length} image${urls.length > 1 ? "s" : ""} uploaded`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
     }
+  };
+
+  const addPastedUrl = () => {
+    const u = pasteUrl.trim();
+    if (!u) return;
+    setForm((f) => ({ ...f, image_urls: [...f.image_urls, u] }));
+    setPasteUrl("");
+  };
+
+  const removeImage = (idx: number) =>
+    setForm((f) => ({ ...f, image_urls: f.image_urls.filter((_, i) => i !== idx) }));
+
+  const moveImage = (idx: number, dir: -1 | 1) => {
+    setForm((f) => {
+      const arr = [...f.image_urls];
+      const j = idx + dir;
+      if (j < 0 || j >= arr.length) return f;
+      [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      return { ...f, image_urls: arr };
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -304,7 +320,6 @@ function ProductForm({
       if (!Number.isFinite(priceN) || priceN < 0) throw new Error("Invalid price");
       if (discountN != null && (!Number.isFinite(discountN) || discountN < 0 || discountN >= priceN))
         throw new Error("Discount price must be less than price");
-      const stockN = Math.max(0, parseInt(form.stock_quantity || "0", 10) || 0);
 
       const payload = {
         name: form.name.trim(),
@@ -313,13 +328,12 @@ function ProductForm({
         price: priceN,
         discount_price: discountN,
         description: form.description.trim(),
-        stock_quantity: stockN,
+        in_stock: form.in_stock,
         type: form.type,
-        color: form.color.trim(),
-        material: form.material.trim(),
         dimensions: form.dimensions.trim(),
         badge: form.badge || null,
-        image_url: form.image_url,
+        image_url: form.image_urls[0] ?? "",
+        image_urls: form.image_urls,
       };
 
       if (form.id) {
@@ -351,35 +365,63 @@ function ProductForm({
 
         <form onSubmit={handleSave} className="p-8 space-y-6">
           <div>
-            <label className="tracking-luxe text-xs text-champagne-deep mb-2 block">Product Image</label>
-            <div className="flex items-center gap-4">
-              {form.image_url ? (
-                <img src={form.image_url} alt="" className="w-24 h-28 object-cover bg-muted" />
-              ) : (
-                <div className="w-24 h-28 bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                  No image
-                </div>
-              )}
+            <label className="tracking-luxe text-xs text-champagne-deep mb-2 block">
+              Product Images {form.image_urls.length > 0 && `(${form.image_urls.length})`}
+            </label>
+            {form.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+                {form.image_urls.map((url, i) => (
+                  <div key={`${url}-${i}`} className="relative group bg-muted aspect-[4/5]">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute top-1 left-1 text-[10px] tracking-luxe bg-champagne text-noir px-1.5 py-0.5">Main</span>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-noir/70 text-ivory text-xs flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => moveImage(i, -1)} className="px-2 py-1 hover:bg-noir" aria-label="Move left">
+                        <GripVertical className="w-3 h-3 rotate-90" />←
+                      </button>
+                      <button type="button" onClick={() => removeImage(i)} className="px-2 py-1 hover:bg-destructive" aria-label="Remove">
+                        <X className="w-3 h-3" />
+                      </button>
+                      <button type="button" onClick={() => moveImage(i, 1)} className="px-2 py-1 hover:bg-noir" aria-label="Move right">
+                        →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-3 flex-wrap">
               <label className="btn-outline-noir cursor-pointer inline-flex items-center gap-2">
                 <Upload className="w-4 h-4" />
-                {uploading ? "Uploading…" : "Upload Image"}
+                {uploading ? "Uploading…" : "Upload Images"}
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleUpload(f);
+                    const fs = e.target.files;
+                    if (fs && fs.length) handleUpload(fs);
+                    e.target.value = "";
                   }}
                 />
               </label>
+              <div className="flex-1 flex gap-2 min-w-[200px]">
+                <input
+                  value={pasteUrl}
+                  onChange={(e) => setPasteUrl(e.target.value)}
+                  placeholder="…or paste image URL"
+                  className="flex-1 bg-transparent border-b border-border py-2 text-sm focus:border-champagne outline-none"
+                />
+                <button type="button" onClick={addPastedUrl} className="text-xs tracking-luxe text-champagne-deep hover:underline">
+                  Add
+                </button>
+              </div>
             </div>
-            <input
-              value={form.image_url}
-              onChange={(e) => set("image_url", e.target.value)}
-              placeholder="…or paste image URL"
-              className="w-full mt-3 bg-transparent border-b border-border py-2 text-sm focus:border-champagne outline-none"
-            />
+            <p className="text-xs text-muted-foreground font-light mt-2">
+              First image is the main thumbnail. Hover to reorder or remove.
+            </p>
           </div>
 
           <Field label="Product Name" required>
@@ -410,8 +452,15 @@ function ProductForm({
             <Field label="Discount Price (₹)">
               <input type="number" min="0" step="1" value={form.discount_price} onChange={(e) => set("discount_price", e.target.value)} className="form-input" placeholder="optional" />
             </Field>
-            <Field label="Stock Quantity" required>
-              <input required type="number" min="0" step="1" value={form.stock_quantity} onChange={(e) => set("stock_quantity", e.target.value)} className="form-input" />
+            <Field label="Availability" required>
+              <select
+                value={form.in_stock ? "in" : "out"}
+                onChange={(e) => set("in_stock", e.target.value === "in")}
+                className="form-input"
+              >
+                <option value="in">In Stock</option>
+                <option value="out">Out of Stock</option>
+              </select>
             </Field>
           </div>
 
@@ -420,7 +469,6 @@ function ProductForm({
           </Field>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Color"><input value={form.color} onChange={(e) => set("color", e.target.value)} className="form-input" maxLength={50} /></Field>
             <Field label="Badge">
               <select value={form.badge} onChange={(e) => set("badge", e.target.value)} className="form-input">
                 <option value="">None</option>
@@ -429,10 +477,9 @@ function ProductForm({
                 <option value="bestseller">Bestseller</option>
               </select>
             </Field>
-          </div>
-          <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Material"><input value={form.material} onChange={(e) => set("material", e.target.value)} className="form-input" maxLength={200} /></Field>
-            <Field label="Dimensions"><input value={form.dimensions} onChange={(e) => set("dimensions", e.target.value)} className="form-input" maxLength={100} /></Field>
+            <Field label="Dimensions">
+              <input value={form.dimensions} onChange={(e) => set("dimensions", e.target.value)} className="form-input" maxLength={100} />
+            </Field>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">

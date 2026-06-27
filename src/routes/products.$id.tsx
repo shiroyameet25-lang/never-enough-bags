@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Heart, Minus, Plus, Shield, Truck, RotateCcw, Star, ChevronRight } from "lucide-react";
+import { Heart, Minus, Plus, Shield, Truck, RotateCcw, Star, ChevronRight, ChevronLeft } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { formatINR, productQueryOptions, productsQueryOptions } from "@/lib/products";
@@ -37,12 +37,6 @@ export const Route = createFileRoute("/products/$id")({
 });
 
 const SIZES = ["Small", "Medium", "Large"];
-const COLORS = [
-  { name: "Noir", hex: "#0A0A0A" },
-  { name: "Ivory", hex: "#FAF8F5" },
-  { name: "Champagne", hex: "#C9A96E" },
-  { name: "Blush", hex: "#E8C4B8" },
-];
 
 function ProductPage() {
   const { id } = Route.useParams();
@@ -50,14 +44,17 @@ function ProductPage() {
   const { data: all = [] } = useQuery(productsQueryOptions);
   const [qty, setQty] = useState(1);
   const [size, setSize] = useState("Medium");
-  const [color, setColor] = useState(COLORS[0].name);
+  const [activeIdx, setActiveIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const { has } = useWishlist();
 
   if (!product) return null;
   const liked = has(product.id);
   const related = all.filter((p) => p.id !== product.id).slice(0, 4);
-  const oos = product.stockQuantity <= 0;
+  const oos = !product.inStock;
+  const images = product.imageUrls.length > 0 ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+  const safeIdx = Math.min(activeIdx, Math.max(0, images.length - 1));
+  const mainImage = images[safeIdx];
 
   const handleAdd = () => {
     if (oos) return;
@@ -78,15 +75,68 @@ function ProductPage() {
 
       <section className="max-w-7xl mx-auto px-6 lg:px-10 py-10 grid lg:grid-cols-2 gap-12 lg:gap-20">
         <div className="space-y-4">
-          <div className="aspect-[4/5] bg-muted overflow-hidden group">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              width={1000}
-              height={1250}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            />
+          <div className="relative aspect-[4/5] bg-muted overflow-hidden group">
+            {mainImage ? (
+              <img
+                src={mainImage}
+                alt={product.name}
+                width={1000}
+                height={1250}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-display italic text-xl">
+                {product.brand}
+              </div>
+            )}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveIdx((i) => (i - 1 + images.length) % images.length)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-ivory/90 backdrop-blur flex items-center justify-center hover:bg-ivory"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveIdx((i) => (i + 1) % images.length)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-ivory/90 backdrop-blur flex items-center justify-center hover:bg-ivory"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {images.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveIdx(i)}
+                      className={`w-2 h-2 rounded-full transition-all ${i === safeIdx ? "bg-noir w-6" : "bg-noir/40"}`}
+                      aria-label={`Image ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
+          {images.length > 1 && (
+            <div className="grid grid-cols-5 gap-2">
+              {images.map((url, i) => (
+                <button
+                  key={`${url}-${i}`}
+                  type="button"
+                  onClick={() => setActiveIdx(i)}
+                  className={`aspect-square bg-muted overflow-hidden border-2 transition-all ${
+                    i === safeIdx ? "border-champagne" : "border-transparent hover:border-border"
+                  }`}
+                >
+                  <img src={url} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -114,9 +164,7 @@ function ProductPage() {
 
           <div className="mb-8 text-sm">
             {oos ? (
-              <span className="tracking-luxe text-destructive">Sold Out</span>
-            ) : product.stockQuantity <= 5 ? (
-              <span className="tracking-luxe text-champagne-deep">Only {product.stockQuantity} left in stock</span>
+              <span className="tracking-luxe text-destructive">Out of Stock</span>
             ) : (
               <span className="tracking-luxe text-green-700">In Stock</span>
             )}
@@ -145,34 +193,17 @@ function ProductPage() {
           </div>
 
           <div className="mb-8">
-            <div className="tracking-luxe mb-3">Color: <span className="text-champagne-deep">{color}</span></div>
-            <div className="flex gap-3">
-              {COLORS.map((c) => (
-                <button
-                  key={c.name}
-                  onClick={() => setColor(c.name)}
-                  style={{ background: c.hex }}
-                  className={`w-10 h-10 rounded-full border-2 transition-all ${
-                    color === c.name ? "border-champagne ring-2 ring-champagne ring-offset-2" : "border-border"
-                  }`}
-                  aria-label={c.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-8">
             <div className="tracking-luxe mb-3">Quantity</div>
             <div className="inline-flex items-center border border-border">
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Minus className="w-4 h-4" /></button>
               <span className="w-12 text-center text-noir">{qty}</span>
-              <button onClick={() => setQty(Math.min(product.stockQuantity || 1, qty + 1))} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => setQty(qty + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <button onClick={handleAdd} disabled={oos} className="btn-gold flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-              {oos ? "Sold Out" : added ? "✓ Added to Cart" : "Add to Cart"}
+              {oos ? "Out of Stock" : added ? "✓ Added to Cart" : "Add to Cart"}
             </button>
             <button
               onClick={() => toggleWishlist(product.id)}
@@ -196,16 +227,12 @@ function ProductPage() {
             ))}
           </div>
 
-          <div className="mt-8 space-y-4">
-            <div>
-              <div className="tracking-luxe text-champagne-deep mb-1">Material</div>
-              <p className="text-sm text-muted-foreground font-light">{product.material}</p>
-            </div>
-            <div>
+          {product.dimensions && (
+            <div className="mt-8">
               <div className="tracking-luxe text-champagne-deep mb-1">Dimensions</div>
               <p className="text-sm text-muted-foreground font-light">{product.dimensions}</p>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

@@ -19,17 +19,16 @@ export type Database = {
           badge: string | null
           brand: string
           brand_slug: string
-          color: string
           created_at: string
           description: string
           dimensions: string
           discount_price: number | null
           id: string
           image_url: string
-          material: string
+          image_urls: string[]
+          in_stock: boolean
           name: string
           price: number
-          stock_quantity: number
           type: string
           updated_at: string
         }
@@ -37,17 +36,16 @@ export type Database = {
           badge?: string | null
           brand: string
           brand_slug: string
-          color?: string
           created_at?: string
           description?: string
           dimensions?: string
           discount_price?: number | null
           id?: string
           image_url?: string
-          material?: string
+          image_urls?: string[]
+          in_stock?: boolean
           name: string
           price: number
-          stock_quantity?: number
           type?: string
           updated_at?: string
         }
@@ -55,17 +53,16 @@ export type Database = {
           badge?: string | null
           brand?: string
           brand_slug?: string
-          color?: string
           created_at?: string
           description?: string
           dimensions?: string
           discount_price?: number | null
           id?: string
           image_url?: string
-          material?: string
+          image_urls?: string[]
+          in_stock?: boolean
           name?: string
           price?: number
-          stock_quantity?: number
           type?: string
           updated_at?: string
         }
