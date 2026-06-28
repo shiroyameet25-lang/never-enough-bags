@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          address: string
+          created_at: string
+          customer_name: string
+          fulfillment_status: Database["public"]["Enums"]["order_fulfillment"]
+          id: string
+          items: Json
+          landmark: string
+          mobile: string
+          payment_reference: string
+          payment_status: string
+          pincode: string
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          customer_name: string
+          fulfillment_status?: Database["public"]["Enums"]["order_fulfillment"]
+          id?: string
+          items?: Json
+          landmark?: string
+          mobile: string
+          payment_reference?: string
+          payment_status?: string
+          pincode: string
+          subtotal?: number
+          tax?: number
+          total: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          customer_name?: string
+          fulfillment_status?: Database["public"]["Enums"]["order_fulfillment"]
+          id?: string
+          items?: Json
+          landmark?: string
+          mobile?: string
+          payment_reference?: string
+          payment_status?: string
+          pincode?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           badge: string | null
@@ -128,6 +185,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      order_fulfillment: "processing" | "shipped" | "delivered" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -256,6 +314,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      order_fulfillment: ["processing", "shipped", "delivered", "cancelled"],
     },
   },
 } as const
