@@ -120,6 +120,7 @@ function AdminDashboard() {
   const { data: products = [], refetch } = useQuery(productsQueryOptions);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<"products" | "orders">("products");
   const [editing, setEditing] = useState<FormState | null>(null);
   const [search, setSearch] = useState("");
 
@@ -174,88 +175,113 @@ function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <GoldDivider label="Admin" />
-            <h1 className="text-display text-4xl md:text-5xl mt-4">Product Catalog</h1>
+            <h1 className="text-display text-4xl md:text-5xl mt-4">Dashboard</h1>
             <p className="text-ivory/60 font-light mt-2">
-              {products.length} {products.length === 1 ? "piece" : "pieces"} in inventory
+              {tab === "products"
+                ? `${products.length} ${products.length === 1 ? "piece" : "pieces"} in inventory`
+                : "Customer orders & fulfillment"}
             </p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setEditing({ ...EMPTY_FORM, image_urls: [] })} className="btn-gold inline-flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Product
-            </button>
+          <div className="flex gap-2 flex-wrap">
+            {tab === "products" && (
+              <button onClick={() => setEditing({ ...EMPTY_FORM, image_urls: [] })} className="btn-gold inline-flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add Product
+              </button>
+            )}
             <button onClick={handleSignOut} className="border border-ivory/30 px-4 py-3 tracking-luxe text-xs hover:bg-ivory/10 inline-flex items-center gap-2">
               <LogOut className="w-4 h-4" /> Sign Out
             </button>
           </div>
         </div>
-      </section>
 
-      <section className="py-10 bg-background">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or brand…"
-            className="w-full bg-transparent border-b border-border py-3 mb-8 focus:border-champagne outline-none"
-          />
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-border text-left text-xs tracking-luxe text-champagne-deep">
-                  <th className="py-3 pr-4">Image</th>
-                  <th className="py-3 pr-4">Name</th>
-                  <th className="py-3 pr-4">Brand</th>
-                  <th className="py-3 pr-4">Price</th>
-                  <th className="py-3 pr-4">Stock</th>
-                  <th className="py-3 pr-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr key={p.id} className="border-b border-border/60 hover:bg-muted/30">
-                    <td className="py-3 pr-4">
-                      {p.imageUrl ? (
-                        <img src={p.imageUrl} alt="" className="w-14 h-16 object-cover bg-muted" />
-                      ) : (
-                        <div className="w-14 h-16 bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4 text-sm font-medium">{p.name}</td>
-                    <td className="py-3 pr-4 text-sm text-muted-foreground">{p.brand}</td>
-                    <td className="py-3 pr-4 text-sm">
-                      {formatINR(p.price)}
-                      {p.originalPrice && (
-                        <span className="text-muted-foreground line-through ml-2 text-xs">{formatINR(p.originalPrice)}</span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4 text-sm">
-                      <span className={p.inStock ? "text-green-700" : "text-destructive"}>
-                        {p.inStock ? "In Stock" : "Out of Stock"}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-right">
-                      <button onClick={() => startEdit(p)} className="p-2 hover:text-champagne-deep" aria-label="Edit">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(p)} className="p-2 hover:text-destructive" aria-label="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                      No products found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-8 flex gap-1 border-b border-ivory/10">
+          {([
+            { key: "products", label: "Products", Icon: ShoppingBag },
+            { key: "orders", label: "Orders", Icon: Package },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`inline-flex items-center gap-2 px-5 py-3 text-xs tracking-luxe border-b-2 transition-colors ${
+                tab === key ? "border-champagne text-champagne" : "border-transparent text-ivory/60 hover:text-ivory"
+              }`}
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
         </div>
       </section>
+
+      {tab === "products" ? (
+        <section className="py-10 bg-background">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or brand…"
+              className="w-full bg-transparent border-b border-border py-3 mb-8 focus:border-champagne outline-none"
+            />
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs tracking-luxe text-champagne-deep">
+                    <th className="py-3 pr-4">Image</th>
+                    <th className="py-3 pr-4">Name</th>
+                    <th className="py-3 pr-4">Brand</th>
+                    <th className="py-3 pr-4">Price</th>
+                    <th className="py-3 pr-4">Stock</th>
+                    <th className="py-3 pr-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => (
+                    <tr key={p.id} className="border-b border-border/60 hover:bg-muted/30">
+                      <td className="py-3 pr-4">
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt="" className="w-14 h-16 object-cover bg-muted" />
+                        ) : (
+                          <div className="w-14 h-16 bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4 text-sm font-medium">{p.name}</td>
+                      <td className="py-3 pr-4 text-sm text-muted-foreground">{p.brand}</td>
+                      <td className="py-3 pr-4 text-sm">
+                        {formatINR(p.price)}
+                        {p.originalPrice && (
+                          <span className="text-muted-foreground line-through ml-2 text-xs">{formatINR(p.originalPrice)}</span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4 text-sm">
+                        <span className={p.inStock ? "text-green-700" : "text-destructive"}>
+                          {p.inStock ? "In Stock" : "Out of Stock"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-right">
+                        <button onClick={() => startEdit(p)} className="p-2 hover:text-champagne-deep" aria-label="Edit">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(p)} className="p-2 hover:text-destructive" aria-label="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                        No products found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <OrdersPanel />
+      )}
 
       {editing && (
         <ProductForm
@@ -270,6 +296,167 @@ function AdminDashboard() {
     </Layout>
   );
 }
+
+function OrdersPanel() {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<"all" | FulfillmentStatus>("all");
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as OrderRow[];
+    },
+  });
+
+  const filtered = useMemo(
+    () => (statusFilter === "all" ? orders : orders.filter((o) => o.fulfillment_status === statusFilter)),
+    [orders, statusFilter],
+  );
+
+  const updateStatus = async (id: string, status: FulfillmentStatus) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ fulfillment_status: status })
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Order marked ${status}`);
+    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+  };
+
+  return (
+    <section className="py-10 bg-background">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="text-sm text-muted-foreground">
+            {orders.length} total · {orders.filter((o) => o.fulfillment_status === "processing").length} pending
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="border border-border bg-transparent px-3 py-2 text-sm tracking-luxe"
+          >
+            <option value="all">All statuses</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        {isLoading ? (
+          <p className="py-12 text-center text-muted-foreground">Loading orders…</p>
+        ) : filtered.length === 0 ? (
+          <p className="py-16 text-center text-muted-foreground font-light">No orders found.</p>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((order) => (
+              <OrderCard key={order.id} order={order} onStatusChange={updateStatus} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange: (id: string, s: FulfillmentStatus) => void | Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const date = new Date(order.created_at);
+  const items = Array.isArray(order.items) ? order.items : [];
+
+  return (
+    <div className="border border-border bg-card">
+      <div className="grid md:grid-cols-[1fr_auto] gap-4 p-5 items-start">
+        <div className="min-w-0">
+          <div className="flex items-center flex-wrap gap-3 mb-2">
+            <span className="text-xs tracking-luxe text-champagne-deep">
+              #{order.id.slice(0, 8).toUpperCase()}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+            </span>
+            <span className="text-[10px] tracking-luxe px-2 py-0.5 bg-green-700 text-white">
+              PAID ONLINE
+            </span>
+          </div>
+          <div className="text-display text-xl mb-1">{order.customer_name}</div>
+          <div className="text-sm text-muted-foreground">
+            📞 <a href={`tel:${order.mobile}`} className="hover:text-noir">{order.mobile}</a> · {items.length} {items.length === 1 ? "item" : "items"}
+          </div>
+          <div className="text-sm font-light mt-2">
+            {order.address}, <strong>{order.pincode}</strong>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Landmark: {order.landmark || "—"}
+          </div>
+          {order.payment_reference && (
+            <div className="text-[10px] text-muted-foreground tracking-luxe mt-1">
+              Txn: {order.payment_reference}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          <div className="text-display text-2xl">{formatINR(Number(order.total))}</div>
+          <select
+            value={order.fulfillment_status}
+            onChange={(e) => onStatusChange(order.id, e.target.value as FulfillmentStatus)}
+            className={`border border-border bg-transparent px-3 py-2 text-xs tracking-luxe ${
+              order.fulfillment_status === "delivered" ? "text-green-700"
+                : order.fulfillment_status === "shipped" ? "text-champagne-deep"
+                : order.fulfillment_status === "cancelled" ? "text-destructive"
+                : ""
+            }`}
+          >
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="text-xs tracking-luxe text-champagne-deep hover:underline"
+          >
+            {open ? "Hide items" : `View ${items.length} item${items.length === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="border-t border-border bg-muted/20 px-5 py-4 space-y-2">
+          {items.map((it, idx) => (
+            <div key={`${it.id}-${idx}`} className="flex items-center gap-3 text-sm">
+              {it.image_url ? (
+                <img src={it.image_url} alt="" className="w-12 h-14 object-cover bg-muted" />
+              ) : (
+                <div className="w-12 h-14 bg-muted" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="line-clamp-1">{it.name}</div>
+                <div className="text-xs text-muted-foreground">{it.brand} · Qty {it.qty}</div>
+              </div>
+              <div className="text-sm">{formatINR(Number(it.price) * it.qty)}</div>
+            </div>
+          ))}
+          <div className="border-t border-border pt-2 flex justify-between text-xs text-muted-foreground">
+            <span>Subtotal {formatINR(Number(order.subtotal))} · GST {formatINR(Number(order.tax))}</span>
+            <span className="text-noir tracking-luxe">Total {formatINR(Number(order.total))}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 async function uploadAndSign(file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
