@@ -118,20 +118,20 @@ function CheckoutPage() {
               <h2 className="text-display text-2xl mb-6">Delivery Details</h2>
               <div className="space-y-5">
                 <Field label="Full Name">
-                  <input required value={form.customer_name} onChange={(e) => set("customer_name", e.target.value)} maxLength={100} className="form-line" />
+                  <input required value={form.customer_name} onChange={(e) => set("customer_name", e.target.value)} maxLength={100} className="form-input" />
                 </Field>
                 <Field label="Mobile Number">
-                  <input required type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} value={form.mobile} onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))} className="form-line" placeholder="10-digit mobile" />
+                  <input required type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} value={form.mobile} onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))} className="form-input" placeholder="10-digit mobile" />
                 </Field>
                 <Field label="Complete Address">
-                  <textarea required rows={3} value={form.address} onChange={(e) => set("address", e.target.value)} maxLength={500} className="form-line resize-none" placeholder="House / Flat no, Street, Area, City, State" />
+                  <textarea required rows={3} value={form.address} onChange={(e) => set("address", e.target.value)} maxLength={500} className="form-input resize-none" placeholder="House / Flat no, Street, Area, City, State" />
                 </Field>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <Field label="Pincode">
-                    <input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={form.pincode} onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))} className="form-line" placeholder="6-digit pincode" />
+                    <input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={form.pincode} onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))} className="form-input" placeholder="6-digit pincode" />
                   </Field>
                   <Field label="Exact Location / Landmark">
-                    <input required value={form.landmark} onChange={(e) => set("landmark", e.target.value)} maxLength={150} className="form-line" placeholder="Near…" />
+                    <input required value={form.landmark} onChange={(e) => set("landmark", e.target.value)} maxLength={150} className="form-input" placeholder="Near…" />
                   </Field>
                 </div>
               </div>
@@ -249,25 +249,25 @@ function PaymentModal({ amount, onClose, onSuccess }: { amount: number; onClose:
 
           {method === "upi" && (
             <Field label="UPI ID">
-              <input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@upi" className="form-line" disabled={processing} />
+              <input value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="yourname@upi" className="form-input" disabled={processing} />
             </Field>
           )}
 
           {method === "card" && (
             <div className="space-y-4">
               <Field label="Card Number">
-                <input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value.replace(/[^\d ]/g, "").slice(0, 19) })} placeholder="0000 0000 0000 0000" className="form-line" disabled={processing} />
+                <input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value.replace(/[^\d ]/g, "").slice(0, 19) })} placeholder="0000 0000 0000 0000" className="form-input" disabled={processing} />
               </Field>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Expiry (MM/YY)">
-                  <input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value.slice(0, 5) })} placeholder="MM/YY" className="form-line" disabled={processing} />
+                  <input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value.slice(0, 5) })} placeholder="MM/YY" className="form-input" disabled={processing} />
                 </Field>
                 <Field label="CVV">
-                  <input value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="•••" className="form-line" disabled={processing} type="password" />
+                  <input value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })} placeholder="•••" className="form-input" disabled={processing} type="password" />
                 </Field>
               </div>
               <Field label="Name on Card">
-                <input value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} className="form-line" disabled={processing} />
+                <input value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} className="form-input" disabled={processing} />
               </Field>
             </div>
           )}
