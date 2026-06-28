@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Upload, X, LogOut, GripVertical } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload, X, LogOut, GripVertical, Package, ShoppingBag } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { GoldDivider } from "@/components/Divider";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,35 @@ import {
   type Product,
 } from "@/lib/products";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
+
+type FulfillmentStatus = "processing" | "shipped" | "delivered" | "cancelled";
+
+type OrderItem = {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  qty: number;
+  image_url?: string;
+};
+
+type OrderRow = {
+  id: string;
+  created_at: string;
+  customer_name: string;
+  mobile: string;
+  address: string;
+  pincode: string;
+  landmark: string;
+  items: OrderItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  payment_status: string;
+  payment_reference: string;
+  fulfillment_status: FulfillmentStatus;
+};
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin Dashboard — NEEVA BAGS" }] }),
