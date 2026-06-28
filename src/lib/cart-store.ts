@@ -47,6 +47,12 @@ export function updateQty(id: string, qty: number) {
   persist();
 }
 
+export function clearCart() {
+  items = [];
+  persist();
+}
+
+
 function subscribe(cb: () => void) {
   listeners.add(cb);
   return () => listeners.delete(cb);
