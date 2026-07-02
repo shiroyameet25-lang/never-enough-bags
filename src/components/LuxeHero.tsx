@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { motion, useScroll, useTransform, useMotionValue, useSpring, type MotionValue } from "framer-motion";
-import { useEffect, useMemo, useRef } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import bag1 from "@/assets/float-bag-1.png";
-import bag2 from "@/assets/float-bag-2.png";
-import bag3 from "@/assets/float-bag-3.png";
+
+const Hero3DScene = lazy(() =>
+  import("@/components/Hero3DScene").then((m) => ({ default: m.Hero3DScene })),
+);
 
 function mulberry32(a: number) {
   return function () {
@@ -53,71 +54,24 @@ function Particles() {
 }
 
 
-function FloatingBag({
-  src,
-  className,
-  rotate = 0,
-  delay = 0,
-  yRange = 30,
-  parallaxY,
-  mouseX,
-  mouseY,
-  depth = 1,
-}: {
-  src: string;
-  className: string;
-  rotate?: number;
-  delay?: number;
-  yRange?: number;
-  parallaxY: MotionValue<number>;
-  mouseX: MotionValue<number>;
-  mouseY: MotionValue<number>;
-  depth?: number;
-}) {
-  const tx = useTransform(mouseX, (v) => v * 30 * depth);
-  const ty = useTransform(mouseY, (v) => v * 30 * depth);
-  return (
-    <motion.div
-      className={`absolute ${className} pointer-events-none`}
-      style={{ y: parallaxY, x: tx, translateY: ty }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.7, rotate: rotate - 10 }}
-        animate={{ opacity: 1, scale: 1, rotate }}
-        transition={{ duration: 1.4, delay, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <motion.div
-          animate={{ y: [0, -yRange, 0], rotate: [rotate, rotate + 3, rotate] }}
-          transition={{ duration: 7 + delay, repeat: Infinity, ease: "easeInOut" }}
-          style={{ filter: "drop-shadow(0 40px 50px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(201,169,110,0.25))" }}
-        >
-          <img src={src} alt="" width={520} height={520} className="w-full h-auto select-none" draggable={false} />
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function LuxeHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
-  const yFar = useTransform(scrollY, [0, 800], [0, 120]);
-  const yMid = useTransform(scrollY, [0, 800], [0, 220]);
-  const yNear = useTransform(scrollY, [0, 800], [0, 340]);
   const contentY = useTransform(scrollY, [0, 600], [0, 80]);
   const contentOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const smx = useSpring(mx, { stiffness: 60, damping: 20 });
-  const smy = useSpring(my, { stiffness: 60, damping: 20 });
+  useSpring(mx, { stiffness: 60, damping: 20 });
+  useSpring(my, { stiffness: 60, damping: 20 });
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      mx.set((e.clientX / w - 0.5) * 2);
-      my.set((e.clientY / h - 0.5) * 2);
+      mx.set((e.clientX / window.innerWidth - 0.5) * 2);
+      my.set((e.clientY / window.innerHeight - 0.5) * 2);
     };
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
@@ -128,91 +82,43 @@ export function LuxeHero() {
       ref={containerRef}
       className="relative min-h-[100svh] overflow-hidden bg-noir text-ivory"
     >
-      {/* Layered atmospheric gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,oklch(0.28_0.04_75/0.55),transparent_55%),radial-gradient(ellipse_at_75%_85%,oklch(0.35_0.06_30/0.35),transparent_60%),linear-gradient(180deg,oklch(0.10_0.005_60)_0%,oklch(0.06_0.005_60)_100%)]" />
+      {/* Deep base */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,oklch(0.12_0.01_75/0.6),transparent_60%),linear-gradient(180deg,oklch(0.06_0.005_60)_0%,oklch(0.04_0.005_260)_100%)]" />
 
-      {/* Spotlight that follows cursor subtly */}
+      {/* Real-time 3D luxury scene */}
+      {mounted && (
+        <div className="absolute inset-0">
+          <Suspense fallback={null}>
+            <Hero3DScene />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Animated mesh gradient blend */}
       <motion.div
-        className="absolute inset-0 pointer-events-none mix-blend-screen"
+        aria-hidden
+        className="absolute inset-0 pointer-events-none mix-blend-screen opacity-60"
+        animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          backgroundImage:
+            "radial-gradient(40% 60% at 20% 30%, rgba(201,169,110,0.18), transparent 60%), radial-gradient(50% 60% at 80% 70%, rgba(180,190,230,0.12), transparent 65%)",
+          backgroundSize: "200% 200%",
+        }}
+      />
+
+      {/* Soft glow behind heading for readability */}
+      <div
+        aria-hidden
+        className="absolute left-0 top-1/2 -translate-y-1/2 w-[70vw] h-[70vh] pointer-events-none"
         style={{
           background:
-            "radial-gradient(600px circle at var(--mx,50%) var(--my,40%), rgba(201,169,110,0.18), transparent 60%)",
-        }}
-        onMouseMove={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.setProperty("--mx", `${e.clientX}px`);
-          el.style.setProperty("--my", `${e.clientY}px`);
+            "radial-gradient(ellipse at 30% 50%, rgba(0,0,0,0.55), transparent 70%)",
         }}
       />
 
-      {/* Geometric rings */}
-      <motion.div
-        className="absolute -right-40 -top-40 w-[640px] h-[640px] rounded-full border border-champagne/15"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
-        style={{ y: yFar }}
-      >
-        <div className="absolute inset-12 rounded-full border border-champagne/10" />
-        <div className="absolute inset-28 rounded-full border border-champagne/5" />
-      </motion.div>
-      <motion.div
-        className="absolute -left-32 bottom-[-180px] w-[520px] h-[520px] rounded-full border border-ivory/5"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-        style={{ y: yFar }}
-      />
-
-      {/* Blurred color orbs */}
-      <motion.div
-        style={{ y: yMid }}
-        className="absolute top-1/4 left-[8%] w-72 h-72 rounded-full blur-3xl opacity-40"
-      >
-        <div className="w-full h-full rounded-full bg-[radial-gradient(circle,oklch(0.76_0.07_80/0.6),transparent_70%)]" />
-      </motion.div>
-      <motion.div
-        style={{ y: yNear }}
-        className="absolute bottom-10 right-[6%] w-80 h-80 rounded-full blur-3xl opacity-30"
-      >
-        <div className="w-full h-full rounded-full bg-[radial-gradient(circle,oklch(0.7_0.12_25/0.7),transparent_70%)]" />
-      </motion.div>
-
-      {/* Particles */}
-      <Particles />
-
-      {/* Floating 3D bags */}
-      <FloatingBag
-        src={bag1}
-        className="right-[-4%] top-[8%] w-[42vw] max-w-[520px] min-w-[280px]"
-        rotate={-8}
-        delay={0.4}
-        yRange={26}
-        parallaxY={yMid}
-        mouseX={smx}
-        mouseY={smy}
-        depth={1.4}
-      />
-      <FloatingBag
-        src={bag2}
-        className="left-[-6%] bottom-[6%] w-[34vw] max-w-[420px] min-w-[220px]"
-        rotate={6}
-        delay={0.7}
-        yRange={20}
-        parallaxY={yNear}
-        mouseX={smx}
-        mouseY={smy}
-        depth={0.9}
-      />
-      <FloatingBag
-        src={bag3}
-        className="right-[14%] bottom-[10%] w-[22vw] max-w-[280px] min-w-[160px] hidden md:block"
-        rotate={-4}
-        delay={1}
-        yRange={16}
-        parallaxY={yFar}
-        mouseX={smx}
-        mouseY={smy}
-        depth={0.6}
-      />
+      {/* Vignette + bottom fade */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.6)_100%)] pointer-events-none" />
 
       {/* Centerpiece content */}
       <motion.div
