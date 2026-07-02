@@ -88,7 +88,9 @@ export function LuxeHero() {
       {/* Real-time 3D luxury scene */}
       {mounted && (
         <div className="absolute inset-0">
-          <Hero3DScene />
+          <Suspense fallback={null}>
+            <Hero3DScene />
+          </Suspense>
         </div>
       )}
 
