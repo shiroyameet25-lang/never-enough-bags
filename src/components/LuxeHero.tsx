@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { motion, useScroll, useTransform, useMotionValue, useSpring, type MotionValue } from "framer-motion";
-import { useEffect, useMemo, useRef } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import bag1 from "@/assets/float-bag-1.png";
-import bag2 from "@/assets/float-bag-2.png";
-import bag3 from "@/assets/float-bag-3.png";
+
+const Hero3DScene = lazy(() =>
+  import("@/components/Hero3DScene").then((m) => ({ default: m.Hero3DScene })),
+);
 
 function mulberry32(a: number) {
   return function () {
