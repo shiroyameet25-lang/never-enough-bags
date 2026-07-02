@@ -6,20 +6,30 @@ import bag1 from "@/assets/float-bag-1.png";
 import bag2 from "@/assets/float-bag-2.png";
 import bag3 from "@/assets/float-bag-3.png";
 
+function mulberry32(a: number) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function Particles() {
-  const dots = useMemo(
-    () =>
-      Array.from({ length: 28 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        size: Math.random() * 3 + 1,
-        delay: Math.random() * 6,
-        duration: 8 + Math.random() * 10,
-        opacity: 0.3 + Math.random() * 0.5,
-      })),
-    [],
-  );
+  const dots = useMemo(() => {
+    const rand = mulberry32(1337);
+    return Array.from({ length: 28 }).map((_, i) => ({
+      id: i,
+      left: rand() * 100,
+      top: rand() * 100,
+      size: rand() * 3 + 1,
+      delay: rand() * 6,
+      duration: 8 + rand() * 10,
+      opacity: 0.3 + rand() * 0.5,
+    }));
+  }, []);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {dots.map((d) => (
@@ -41,6 +51,7 @@ function Particles() {
     </div>
   );
 }
+
 
 function FloatingBag({
   src,
