@@ -6,6 +6,8 @@ import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldDivider } from "@/components/Divider";
 import { LuxeHero } from "@/components/LuxeHero";
+import { CinematicBackground } from "@/components/CinematicBackground";
+import { LuxeLoader } from "@/components/LuxeLoader";
 import { BRANDS, productsQueryOptions } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
@@ -193,12 +195,19 @@ function Gallery() {
 function HomePage() {
   return (
     <Layout>
-      <LuxeHero />
-      <BrandStrip />
-      <NewArrivals />
-      <WhyUs />
-      <Testimonials />
-      <Gallery />
+      <LuxeLoader />
+      <div className="relative">
+        <CinematicBackground />
+        <div className="relative z-10">
+          <LuxeHero />
+          <BrandStrip />
+          <NewArrivals />
+          <WhyUs />
+          <Testimonials />
+          <Gallery />
+        </div>
+      </div>
     </Layout>
   );
 }
+
