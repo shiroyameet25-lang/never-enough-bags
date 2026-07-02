@@ -54,71 +54,24 @@ function Particles() {
 }
 
 
-function FloatingBag({
-  src,
-  className,
-  rotate = 0,
-  delay = 0,
-  yRange = 30,
-  parallaxY,
-  mouseX,
-  mouseY,
-  depth = 1,
-}: {
-  src: string;
-  className: string;
-  rotate?: number;
-  delay?: number;
-  yRange?: number;
-  parallaxY: MotionValue<number>;
-  mouseX: MotionValue<number>;
-  mouseY: MotionValue<number>;
-  depth?: number;
-}) {
-  const tx = useTransform(mouseX, (v) => v * 30 * depth);
-  const ty = useTransform(mouseY, (v) => v * 30 * depth);
-  return (
-    <motion.div
-      className={`absolute ${className} pointer-events-none`}
-      style={{ y: parallaxY, x: tx, translateY: ty }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.7, rotate: rotate - 10 }}
-        animate={{ opacity: 1, scale: 1, rotate }}
-        transition={{ duration: 1.4, delay, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <motion.div
-          animate={{ y: [0, -yRange, 0], rotate: [rotate, rotate + 3, rotate] }}
-          transition={{ duration: 7 + delay, repeat: Infinity, ease: "easeInOut" }}
-          style={{ filter: "drop-shadow(0 40px 50px rgba(0,0,0,0.55)) drop-shadow(0 0 30px rgba(201,169,110,0.25))" }}
-        >
-          <img src={src} alt="" width={520} height={520} className="w-full h-auto select-none" draggable={false} />
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function LuxeHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
-  const yFar = useTransform(scrollY, [0, 800], [0, 120]);
-  const yMid = useTransform(scrollY, [0, 800], [0, 220]);
-  const yNear = useTransform(scrollY, [0, 800], [0, 340]);
   const contentY = useTransform(scrollY, [0, 600], [0, 80]);
   const contentOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const smx = useSpring(mx, { stiffness: 60, damping: 20 });
-  const smy = useSpring(my, { stiffness: 60, damping: 20 });
+  useSpring(mx, { stiffness: 60, damping: 20 });
+  useSpring(my, { stiffness: 60, damping: 20 });
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      mx.set((e.clientX / w - 0.5) * 2);
-      my.set((e.clientY / h - 0.5) * 2);
+      mx.set((e.clientX / window.innerWidth - 0.5) * 2);
+      my.set((e.clientY / window.innerHeight - 0.5) * 2);
     };
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
