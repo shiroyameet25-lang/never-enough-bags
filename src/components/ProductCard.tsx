@@ -16,10 +16,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.7, delay: (index % 4) * 0.08, ease: [0.16, 1, 0.3, 1] }}
-      className="group"
+      className="group [perspective:1200px]"
     >
       <Link to="/products/$id" params={{ id: product.id }} className="block">
-        <div className="product-card relative bg-card overflow-hidden">
+        <div className="product-card relative bg-card overflow-hidden transition-transform duration-500 ease-out will-change-transform group-hover:[transform:rotateX(2deg)_rotateY(-2deg)_translateZ(0)]">
           <div className="relative aspect-[4/5] overflow-hidden bg-muted">
             {product.imageUrl ? (
               <img
