@@ -36,13 +36,27 @@ export function LuxeHero() {
       {/* Deep base */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,oklch(0.12_0.01_75/0.6),transparent_60%),linear-gradient(180deg,oklch(0.06_0.005_60)_0%,oklch(0.04_0.005_260)_100%)]" />
 
-      {/* Real-time 3D luxury scene */}
-      {mounted && (
+      {/* Real-time 3D luxury scene — desktop only, respects reduced-motion */}
+      {show3D && (
         <div className="absolute inset-0">
           <Suspense fallback={null}>
             <Hero3DScene />
           </Suspense>
         </div>
+      )}
+
+      {/* Mobile / reduced-motion fallback: cinematic static gradient */}
+      {mounted && !show3D && (
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 50% at 30% 30%, oklch(0.30 0.05 75 / 0.55), transparent 65%)," +
+              "radial-gradient(50% 45% at 75% 70%, oklch(0.25 0.08 260 / 0.4), transparent 70%)," +
+              "linear-gradient(180deg, oklch(0.08 0.005 60), oklch(0.05 0.005 260))",
+          }}
+        />
       )}
 
       {/* Animated mesh gradient blend */}
