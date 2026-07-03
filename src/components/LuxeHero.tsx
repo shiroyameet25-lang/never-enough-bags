@@ -1,58 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Hero3DScene = lazy(() =>
   import("@/components/Hero3DScene").then((m) => ({ default: m.Hero3DScene })),
 );
-
-function mulberry32(a: number) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function Particles() {
-  const dots = useMemo(() => {
-    const rand = mulberry32(1337);
-    return Array.from({ length: 28 }).map((_, i) => ({
-      id: i,
-      left: rand() * 100,
-      top: rand() * 100,
-      size: rand() * 3 + 1,
-      delay: rand() * 6,
-      duration: 8 + rand() * 10,
-      opacity: 0.3 + rand() * 0.5,
-    }));
-  }, []);
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {dots.map((d) => (
-        <motion.span
-          key={d.id}
-          className="absolute rounded-full bg-champagne"
-          style={{
-            left: `${d.left}%`,
-            top: `${d.top}%`,
-            width: d.size,
-            height: d.size,
-            opacity: d.opacity,
-            boxShadow: "0 0 12px var(--champagne)",
-          }}
-          animate={{ y: [0, -40, 0], opacity: [d.opacity, d.opacity * 0.3, d.opacity] }}
-          transition={{ duration: d.duration, delay: d.delay, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ))}
-    </div>
-  );
-}
-
 
 export function LuxeHero() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,22 +14,19 @@ export function LuxeHero() {
   const contentY = useTransform(scrollY, [0, 600], [0, 80]);
   const contentOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  useSpring(mx, { stiffness: 60, damping: 20 });
-  useSpring(my, { stiffness: 60, damping: 20 });
-
+  const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mx.set((e.clientX / window.innerWidth - 0.5) * 2);
-      my.set((e.clientY / window.innerHeight - 0.5) * 2);
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, [mx, my]);
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setReducedMotion(mq.matches);
+    }
+  }, []);
+
+  const show3D = mounted && !isMobile && !reducedMotion;
 
   return (
     <section
@@ -85,13 +36,27 @@ export function LuxeHero() {
       {/* Deep base */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,oklch(0.12_0.01_75/0.6),transparent_60%),linear-gradient(180deg,oklch(0.06_0.005_60)_0%,oklch(0.04_0.005_260)_100%)]" />
 
-      {/* Real-time 3D luxury scene */}
-      {mounted && (
+      {/* Real-time 3D luxury scene — desktop only, respects reduced-motion */}
+      {show3D && (
         <div className="absolute inset-0">
           <Suspense fallback={null}>
             <Hero3DScene />
           </Suspense>
         </div>
+      )}
+
+      {/* Mobile / reduced-motion fallback: cinematic static gradient */}
+      {mounted && !show3D && (
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 50% at 30% 30%, oklch(0.30 0.05 75 / 0.55), transparent 65%)," +
+              "radial-gradient(50% 45% at 75% 70%, oklch(0.25 0.08 260 / 0.4), transparent 70%)," +
+              "linear-gradient(180deg, oklch(0.08 0.005 60), oklch(0.05 0.005 260))",
+          }}
+        />
       )}
 
       {/* Animated mesh gradient blend */}
