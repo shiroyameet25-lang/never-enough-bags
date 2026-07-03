@@ -3,28 +3,63 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Float, MeshTransmissionMaterial, Sparkles, Torus } from "@react-three/drei";
 import * as THREE from "three";
 
-function Crystal({ position, scale = 1, color = "#e8d9b0" }: { position: [number, number, number]; scale?: number; color?: string }) {
+/**
+ * Performance notes:
+ * - Only ONE hero crystal uses the (expensive) MeshTransmissionMaterial; the
+ *   rest use cheap physical materials that visually read as glass/metal.
+ * - Sparkle counts, dpr, and shadow work kept low to hold 60fps.
+ */
+
+function HeroCrystal({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
   const ref = useRef<THREE.Mesh>(null!);
   useFrame((_, dt) => {
     ref.current.rotation.x += dt * 0.08;
     ref.current.rotation.y += dt * 0.12;
   });
   return (
-    <Float speed={1.1} rotationIntensity={0.4} floatIntensity={1.2}>
+    <Float speed={1} rotationIntensity={0.4} floatIntensity={1.1}>
       <mesh ref={ref} position={position} scale={scale}>
         <octahedronGeometry args={[1, 0]} />
         <MeshTransmissionMaterial
-          color={color}
-          thickness={1.4}
-          roughness={0.05}
+          color="#f5e9c8"
+          thickness={1.2}
+          roughness={0.06}
           transmission={1}
           ior={1.5}
-          chromaticAberration={0.08}
-          anisotropy={0.3}
-          distortion={0.2}
-          distortionScale={0.4}
-          temporalDistortion={0.1}
-          backside
+          chromaticAberration={0.06}
+          anisotropy={0.25}
+          distortion={0.15}
+          distortionScale={0.35}
+          temporalDistortion={0.06}
+          samples={6}
+          resolution={256}
+          backside={false}
+        />
+      </mesh>
+    </Float>
+  );
+}
+
+function GlassCrystal({ position, scale = 1, color = "#e8d9b0", opacity = 0.55 }: { position: [number, number, number]; scale?: number; color?: string; opacity?: number }) {
+  const ref = useRef<THREE.Mesh>(null!);
+  useFrame((_, dt) => {
+    ref.current.rotation.x += dt * 0.06;
+    ref.current.rotation.y += dt * 0.1;
+  });
+  return (
+    <Float speed={1.05} rotationIntensity={0.35} floatIntensity={1}>
+      <mesh ref={ref} position={position} scale={scale}>
+        <octahedronGeometry args={[1, 0]} />
+        <meshPhysicalMaterial
+          color={color}
+          metalness={0.15}
+          roughness={0.12}
+          transmission={0.6}
+          thickness={0.8}
+          ior={1.35}
+          transparent
+          opacity={opacity}
+          envMapIntensity={1.6}
         />
       </mesh>
     </Float>
@@ -37,28 +72,10 @@ function ChromeRing({ position, rotation, radius = 1.6 }: { position: [number, n
     ref.current.rotation.z += dt * 0.06;
   });
   return (
-    <Float speed={0.7} rotationIntensity={0.2} floatIntensity={0.6}>
-      <Torus ref={ref} args={[radius, 0.03, 32, 200]} position={position} rotation={rotation}>
-        <meshStandardMaterial color="#f5e9c8" metalness={1} roughness={0.15} envMapIntensity={2} />
+    <Float speed={0.6} rotationIntensity={0.2} floatIntensity={0.55}>
+      <Torus ref={ref} args={[radius, 0.028, 24, 128]} position={position} rotation={rotation}>
+        <meshStandardMaterial color="#f5e9c8" metalness={1} roughness={0.18} envMapIntensity={2} />
       </Torus>
-    </Float>
-  );
-}
-
-function GlassPanel({ position, rotation, size }: { position: [number, number, number]; rotation: [number, number, number]; size: [number, number] }) {
-  return (
-    <Float speed={0.5} rotationIntensity={0.15} floatIntensity={0.5}>
-      <mesh position={position} rotation={rotation}>
-        <planeGeometry args={size} />
-        <MeshTransmissionMaterial
-          thickness={0.4}
-          roughness={0.1}
-          transmission={1}
-          ior={1.3}
-          color="#ffffff"
-          backside
-        />
-      </mesh>
     </Float>
   );
 }
@@ -67,14 +84,14 @@ function ParallaxRig() {
   const { camera, pointer } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   useFrame(() => {
-    camera.position.x += (pointer.x * 0.9 - camera.position.x) * 0.04;
-    camera.position.y += (-pointer.y * 0.6 - camera.position.y) * 0.04;
+    camera.position.x += (pointer.x * 0.8 - camera.position.x) * 0.035;
+    camera.position.y += (-pointer.y * 0.55 - camera.position.y) * 0.035;
     camera.lookAt(target);
   });
   return null;
 }
 
-function LightRays() {
+function LightRig() {
   const ref = useRef<THREE.SpotLight>(null!);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -85,18 +102,10 @@ function LightRays() {
   });
   return (
     <>
-      <ambientLight intensity={0.25} />
-      <spotLight
-        ref={ref}
-        position={[3, 4, 5]}
-        angle={0.6}
-        penumbra={1}
-        intensity={90}
-        color="#f5d488"
-        castShadow={false}
-      />
-      <pointLight position={[-5, -2, 3]} intensity={30} color="#8fa8ff" />
-      <pointLight position={[5, -3, -2]} intensity={20} color="#c9a96e" />
+      <ambientLight intensity={0.3} />
+      <spotLight ref={ref} position={[3, 4, 5]} angle={0.6} penumbra={1} intensity={80} color="#f5d488" />
+      <pointLight position={[-5, -2, 3]} intensity={22} color="#8fa8ff" />
+      <pointLight position={[5, -3, -2]} intensity={16} color="#c9a96e" />
     </>
   );
 }
@@ -106,28 +115,26 @@ function Scene() {
     <>
       <color attach="background" args={["#050506"]} />
       <fog attach="fog" args={["#050506", 6, 22]} />
-      <LightRays />
+      <LightRig />
       <ParallaxRig />
 
-      {/* Crystals */}
-      <Crystal position={[-3.2, 0.8, -1]} scale={1.1} />
-      <Crystal position={[3.5, -0.6, -2]} scale={1.4} color="#f0e0b5" />
-      <Crystal position={[1.2, 1.8, -3]} scale={0.7} color="#e6d29a" />
-      <Crystal position={[-2, -1.6, -2.5]} scale={0.9} color="#efe4c2" />
-      <Crystal position={[0, -0.2, -5]} scale={2} color="#f5e9c8" />
+      {/* One hero transmission crystal — the visual focal point */}
+      <HeroCrystal position={[0, -0.1, -4.5]} scale={2} />
+
+      {/* Cheap glass crystals fill the space without tanking perf */}
+      <GlassCrystal position={[-3.2, 0.8, -1]} scale={1.1} />
+      <GlassCrystal position={[3.5, -0.6, -2]} scale={1.4} color="#f0e0b5" opacity={0.6} />
+      <GlassCrystal position={[1.2, 1.8, -3]} scale={0.7} color="#e6d29a" opacity={0.5} />
+      <GlassCrystal position={[-2, -1.6, -2.5]} scale={0.9} color="#efe4c2" opacity={0.55} />
 
       {/* Chrome rings */}
       <ChromeRing position={[2.4, 0.4, -2]} rotation={[Math.PI / 3, 0, 0.3]} radius={1.4} />
       <ChromeRing position={[-2.8, -0.5, -1.5]} rotation={[Math.PI / 2.5, 0.4, 0]} radius={1.1} />
       <ChromeRing position={[0.5, 1.5, -4]} rotation={[Math.PI / 4, 0.6, 0.2]} radius={2} />
 
-      {/* Glass panels */}
-      <GlassPanel position={[-4, 1.5, -3]} rotation={[0, 0.4, 0.2]} size={[1.4, 2]} />
-      <GlassPanel position={[4.2, -1.2, -3.5]} rotation={[0, -0.5, -0.15]} size={[1.2, 1.8]} />
-
-      {/* Premium particles */}
-      <Sparkles count={140} scale={[14, 8, 8]} size={2.4} speed={0.25} opacity={0.7} color="#f5d488" />
-      <Sparkles count={80} scale={[16, 10, 10]} size={1.2} speed={0.15} opacity={0.5} color="#ffffff" />
+      {/* Particles — leaner counts */}
+      <Sparkles count={70} scale={[14, 8, 8]} size={2.2} speed={0.22} opacity={0.65} color="#f5d488" />
+      <Sparkles count={40} scale={[16, 10, 10]} size={1} speed={0.14} opacity={0.45} color="#ffffff" />
 
       <Environment preset="warehouse" environmentIntensity={0.35} />
     </>
@@ -137,10 +144,11 @@ function Scene() {
 export function Hero3DScene() {
   return (
     <Canvas
-      dpr={[1, 1.75]}
+      dpr={[1, 1.5]}
       camera={{ position: [0, 0, 6], fov: 45 }}
       gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
       style={{ position: "absolute", inset: 0 }}
+      frameloop="always"
     >
       <Suspense fallback={null}>
         <Scene />
