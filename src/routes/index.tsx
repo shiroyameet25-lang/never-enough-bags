@@ -206,6 +206,7 @@ function HomePage() {
           <WhyUs />
           <Testimonials />
           <Gallery />
+          <BusinessBanner />
         </div>
       </div>
     </Layout>
