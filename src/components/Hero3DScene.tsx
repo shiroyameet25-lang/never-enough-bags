@@ -1,63 +1,173 @@
 import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Float, MeshTransmissionMaterial, Sparkles, Torus } from "@react-three/drei";
+import { Environment, Float, MeshTransmissionMaterial, Sparkles, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
-function Crystal({ position, scale = 1, color = "#e8d9b0" }: { position: [number, number, number]; scale?: number; color?: string }) {
-  const ref = useRef<THREE.Mesh>(null!);
+/**
+ * A stylized luxury handbag built from primitives:
+ * - Rounded leather body
+ * - Gold metallic clasp
+ * - Arched top handle
+ * - Subtle stitching implied via emissive edge sheen
+ */
+function LuxuryHandbag({
+  position,
+  rotation = [0, 0, 0],
+  scale = 1,
+  leather = "#2a1a12",
+  accent = "#c9a96e",
+}: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number;
+  leather?: string;
+  accent?: string;
+}) {
+  const group = useRef<THREE.Group>(null!);
   useFrame((_, dt) => {
-    ref.current.rotation.x += dt * 0.08;
-    ref.current.rotation.y += dt * 0.12;
+    group.current.rotation.y += dt * 0.15;
   });
+
+  // Arched handle points
+  const handleCurve = useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.55, 0.55, 0),
+      new THREE.Vector3(-0.5, 1.05, 0),
+      new THREE.Vector3(0, 1.25, 0),
+      new THREE.Vector3(0.5, 1.05, 0),
+      new THREE.Vector3(0.55, 0.55, 0),
+    ]);
+    return curve;
+  }, []);
+
   return (
-    <Float speed={1.1} rotationIntensity={0.4} floatIntensity={1.2}>
-      <mesh ref={ref} position={position} scale={scale}>
-        <octahedronGeometry args={[1, 0]} />
-        <MeshTransmissionMaterial
-          color={color}
-          thickness={1.4}
-          roughness={0.05}
-          transmission={1}
-          ior={1.5}
-          chromaticAberration={0.08}
-          anisotropy={0.3}
-          distortion={0.2}
-          distortionScale={0.4}
-          temporalDistortion={0.1}
-          backside
-        />
+    <Float speed={1} rotationIntensity={0.25} floatIntensity={0.9}>
+      <group ref={group} position={position} rotation={rotation} scale={scale}>
+        {/* Body — supple leather */}
+        <RoundedBox args={[1.4, 1.05, 0.55]} radius={0.18} smoothness={6} castShadow>
+          <meshPhysicalMaterial
+            color={leather}
+            roughness={0.55}
+            metalness={0.05}
+            clearcoat={0.6}
+            clearcoatRoughness={0.35}
+            sheen={1}
+            sheenColor={accent}
+            sheenRoughness={0.4}
+          />
+        </RoundedBox>
+
+        {/* Front flap */}
+        <RoundedBox
+          args={[1.42, 0.55, 0.02]}
+          radius={0.12}
+          smoothness={6}
+          position={[0, 0.15, 0.29]}
+        >
+          <meshPhysicalMaterial
+            color={leather}
+            roughness={0.5}
+            metalness={0.05}
+            clearcoat={0.7}
+            clearcoatRoughness={0.3}
+            sheen={1}
+            sheenColor={accent}
+          />
+        </RoundedBox>
+
+        {/* Gold clasp */}
+        <mesh position={[0, -0.12, 0.31]}>
+          <boxGeometry args={[0.22, 0.12, 0.05]} />
+          <meshStandardMaterial
+            color={accent}
+            metalness={1}
+            roughness={0.15}
+            envMapIntensity={2.2}
+          />
+        </mesh>
+        <mesh position={[0, -0.12, 0.34]}>
+          <cylinderGeometry args={[0.045, 0.045, 0.05, 24]} />
+          <meshStandardMaterial color="#f5d488" metalness={1} roughness={0.1} envMapIntensity={2.5} />
+        </mesh>
+
+        {/* Arched top handle */}
+        <mesh>
+          <tubeGeometry args={[handleCurve, 64, 0.035, 12, false]} />
+          <meshPhysicalMaterial
+            color={leather}
+            roughness={0.45}
+            metalness={0.1}
+            clearcoat={0.8}
+          />
+        </mesh>
+
+        {/* Handle gold anchors */}
+        {[-0.55, 0.55].map((x) => (
+          <mesh key={x} position={[x, 0.55, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.08, 16]} />
+            <meshStandardMaterial color={accent} metalness={1} roughness={0.15} />
+          </mesh>
+        ))}
+
+        {/* Bottom gold feet */}
+        {[[-0.55, -0.5, 0.2], [0.55, -0.5, 0.2], [-0.55, -0.5, -0.2], [0.55, -0.5, -0.2]].map(
+          (p, i) => (
+            <mesh key={i} position={p as [number, number, number]}>
+              <sphereGeometry args={[0.045, 16, 16]} />
+              <meshStandardMaterial color={accent} metalness={1} roughness={0.2} />
+            </mesh>
+          ),
+        )}
+      </group>
+    </Float>
+  );
+}
+
+function DisplayPedestal({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Glass display cylinder */}
+      <mesh position={[0, -0.05, 0]}>
+        <cylinderGeometry args={[1.05, 1.05, 0.1, 64]} />
+        <meshStandardMaterial color="#f5e9c8" metalness={1} roughness={0.2} />
       </mesh>
-    </Float>
-  );
-}
-
-function ChromeRing({ position, rotation, radius = 1.6 }: { position: [number, number, number]; rotation: [number, number, number]; radius?: number }) {
-  const ref = useRef<THREE.Mesh>(null!);
-  useFrame((_, dt) => {
-    ref.current.rotation.z += dt * 0.06;
-  });
-  return (
-    <Float speed={0.7} rotationIntensity={0.2} floatIntensity={0.6}>
-      <Torus ref={ref} args={[radius, 0.03, 32, 200]} position={position} rotation={rotation}>
-        <meshStandardMaterial color="#f5e9c8" metalness={1} roughness={0.15} envMapIntensity={2} />
-      </Torus>
-    </Float>
-  );
-}
-
-function GlassPanel({ position, rotation, size }: { position: [number, number, number]; rotation: [number, number, number]; size: [number, number] }) {
-  return (
-    <Float speed={0.5} rotationIntensity={0.15} floatIntensity={0.5}>
-      <mesh position={position} rotation={rotation}>
-        <planeGeometry args={size} />
+      <mesh position={[0, -1.2, 0]}>
+        <cylinderGeometry args={[0.95, 1.1, 2.2, 64]} />
         <MeshTransmissionMaterial
-          thickness={0.4}
-          roughness={0.1}
+          thickness={0.6}
+          roughness={0.08}
           transmission={1}
-          ior={1.3}
+          ior={1.45}
           color="#ffffff"
           backside
         />
+      </mesh>
+      <mesh position={[0, -2.35, 0]}>
+        <cylinderGeometry args={[1.15, 1.15, 0.12, 64]} />
+        <meshStandardMaterial color="#1a1310" metalness={0.4} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function ChromeArch({
+  position,
+  rotation,
+  radius = 1.6,
+}: {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  radius?: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null!);
+  useFrame((_, dt) => {
+    ref.current.rotation.z += dt * 0.04;
+  });
+  return (
+    <Float speed={0.6} rotationIntensity={0.15} floatIntensity={0.4}>
+      <mesh ref={ref} position={position} rotation={rotation}>
+        <torusGeometry args={[radius, 0.025, 24, 160]} />
+        <meshStandardMaterial color="#c9a96e" metalness={1} roughness={0.15} envMapIntensity={2} />
       </mesh>
     </Float>
   );
@@ -67,36 +177,40 @@ function ParallaxRig() {
   const { camera, pointer } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   useFrame(() => {
-    camera.position.x += (pointer.x * 0.9 - camera.position.x) * 0.04;
-    camera.position.y += (-pointer.y * 0.6 - camera.position.y) * 0.04;
+    camera.position.x += (pointer.x * 0.7 - camera.position.x) * 0.04;
+    camera.position.y += (-pointer.y * 0.4 - camera.position.y) * 0.04;
     camera.lookAt(target);
   });
   return null;
 }
 
-function LightRays() {
-  const ref = useRef<THREE.SpotLight>(null!);
+function BoutiqueLighting() {
+  const spot = useRef<THREE.SpotLight>(null!);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    if (ref.current) {
-      ref.current.position.x = Math.sin(t * 0.15) * 4;
-      ref.current.position.y = 3 + Math.cos(t * 0.2) * 0.8;
+    if (spot.current) {
+      spot.current.position.x = Math.sin(t * 0.12) * 2.5;
     }
   });
   return (
     <>
-      <ambientLight intensity={0.25} />
+      <ambientLight intensity={0.18} />
+      {/* Key spotlight — boutique showroom */}
       <spotLight
-        ref={ref}
-        position={[3, 4, 5]}
-        angle={0.6}
-        penumbra={1}
-        intensity={90}
+        ref={spot}
+        position={[0, 6, 4]}
+        angle={0.5}
+        penumbra={0.9}
+        intensity={140}
         color="#f5d488"
-        castShadow={false}
+        target-position={[0, 0, 0]}
       />
-      <pointLight position={[-5, -2, 3]} intensity={30} color="#8fa8ff" />
-      <pointLight position={[5, -3, -2]} intensity={20} color="#c9a96e" />
+      {/* Warm fill */}
+      <pointLight position={[-5, 1, 3]} intensity={22} color="#c9a96e" />
+      {/* Cool rim */}
+      <pointLight position={[5, -1, -2]} intensity={18} color="#8fa8ff" />
+      {/* Under-lit pedestal glow */}
+      <pointLight position={[0, -1.5, 1]} intensity={12} color="#f5e9c8" />
     </>
   );
 }
@@ -104,32 +218,57 @@ function LightRays() {
 function Scene() {
   return (
     <>
-      <color attach="background" args={["#050506"]} />
-      <fog attach="fog" args={["#050506", 6, 22]} />
-      <LightRays />
+      <color attach="background" args={["#0a0705"]} />
+      <fog attach="fog" args={["#0a0705", 7, 22]} />
+      <BoutiqueLighting />
       <ParallaxRig />
 
-      {/* Crystals */}
-      <Crystal position={[-3.2, 0.8, -1]} scale={1.1} />
-      <Crystal position={[3.5, -0.6, -2]} scale={1.4} color="#f0e0b5" />
-      <Crystal position={[1.2, 1.8, -3]} scale={0.7} color="#e6d29a" />
-      <Crystal position={[-2, -1.6, -2.5]} scale={0.9} color="#efe4c2" />
-      <Crystal position={[0, -0.2, -5]} scale={2} color="#f5e9c8" />
+      {/* Hero handbag on center pedestal */}
+      <group position={[0, 0.35, -1]}>
+        <LuxuryHandbag position={[0, 0.9, 0]} scale={1.15} leather="#2a1a12" accent="#c9a96e" />
+        <DisplayPedestal position={[0, -0.2, 0]} />
+      </group>
 
-      {/* Chrome rings */}
-      <ChromeRing position={[2.4, 0.4, -2]} rotation={[Math.PI / 3, 0, 0.3]} radius={1.4} />
-      <ChromeRing position={[-2.8, -0.5, -1.5]} rotation={[Math.PI / 2.5, 0.4, 0]} radius={1.1} />
-      <ChromeRing position={[0.5, 1.5, -4]} rotation={[Math.PI / 4, 0.6, 0.2]} radius={2} />
+      {/* Floating satellite handbags */}
+      <LuxuryHandbag
+        position={[-3.6, 1.2, -2]}
+        rotation={[0.1, 0.4, -0.05]}
+        scale={0.75}
+        leather="#3d2418"
+        accent="#e8c07a"
+      />
+      <LuxuryHandbag
+        position={[3.6, -0.4, -2.5]}
+        rotation={[-0.05, -0.5, 0.08]}
+        scale={0.85}
+        leather="#1a1a1a"
+        accent="#f5d488"
+      />
+      <LuxuryHandbag
+        position={[-2.8, -1.3, -3]}
+        rotation={[0.08, 0.9, 0]}
+        scale={0.6}
+        leather="#5c2018"
+        accent="#c9a96e"
+      />
+      <LuxuryHandbag
+        position={[3.2, 1.6, -3.5]}
+        rotation={[-0.1, -0.9, 0.06]}
+        scale={0.55}
+        leather="#e8c5a0"
+        accent="#8b6f4e"
+      />
 
-      {/* Glass panels */}
-      <GlassPanel position={[-4, 1.5, -3]} rotation={[0, 0.4, 0.2]} size={[1.4, 2]} />
-      <GlassPanel position={[4.2, -1.2, -3.5]} rotation={[0, -0.5, -0.15]} size={[1.2, 1.8]} />
+      {/* Gold chrome arches — hardware motif */}
+      <ChromeArch position={[0, 0.5, -4.5]} rotation={[0, 0, 0]} radius={2.6} />
+      <ChromeArch position={[-1.2, 0.8, -3.5]} rotation={[Math.PI / 3, 0.3, 0.2]} radius={1.2} />
+      <ChromeArch position={[1.4, -0.3, -3]} rotation={[Math.PI / 2.5, -0.4, 0]} radius={1} />
 
-      {/* Premium particles */}
-      <Sparkles count={140} scale={[14, 8, 8]} size={2.4} speed={0.25} opacity={0.7} color="#f5d488" />
-      <Sparkles count={80} scale={[16, 10, 10]} size={1.2} speed={0.15} opacity={0.5} color="#ffffff" />
+      {/* Champagne sparkles — light catching on leather */}
+      <Sparkles count={120} scale={[14, 8, 8]} size={2.2} speed={0.2} opacity={0.6} color="#f5d488" />
+      <Sparkles count={60} scale={[16, 10, 10]} size={1} speed={0.12} opacity={0.4} color="#ffffff" />
 
-      <Environment preset="warehouse" environmentIntensity={0.35} />
+      <Environment preset="apartment" environmentIntensity={0.4} />
     </>
   );
 }
