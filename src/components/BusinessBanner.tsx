@@ -1,24 +1,22 @@
 import { motion } from "framer-motion";
-import bannerImg from "@/assets/business-banner.jpg";
+import bannerAsset from "@/assets/ladies-warehouse-banner.jpg.asset.json";
 
 export function BusinessBanner() {
   return (
     <section className="py-20 md:py-28 bg-gradient-to-b from-background via-blush/20 to-background">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-3xl overflow-hidden border border-champagne/30 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)] bg-ivory"
+          className="relative rounded-3xl overflow-hidden border border-champagne/30 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] bg-noir"
         >
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne to-transparent z-10" />
           <img
-            src={bannerImg}
-            alt="NEEVA BAGS — Where Luxury Meets Identity"
+            src={bannerAsset.url}
+            alt="Ladies Warehouse Purse — Shop No.59, Bhaktinandan Soc., Sector-4, Mota Varachha, Surat"
             loading="lazy"
-            width={1920}
-            height={768}
             className="w-full h-auto object-contain block"
           />
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-champagne to-transparent z-10" />
