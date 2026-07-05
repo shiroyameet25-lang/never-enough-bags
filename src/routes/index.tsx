@@ -8,6 +8,7 @@ import { GoldDivider } from "@/components/Divider";
 import { LuxeHero } from "@/components/LuxeHero";
 import { CinematicBackground } from "@/components/CinematicBackground";
 import { LuxeLoader } from "@/components/LuxeLoader";
+import { BusinessBanner } from "@/components/BusinessBanner";
 import { BRANDS, productsQueryOptions } from "@/lib/products";
 
 export const Route = createFileRoute("/")({
@@ -205,6 +206,7 @@ function HomePage() {
           <WhyUs />
           <Testimonials />
           <Gallery />
+          <BusinessBanner />
         </div>
       </div>
     </Layout>
