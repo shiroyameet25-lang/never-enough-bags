@@ -205,7 +205,7 @@ function ProductPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 mb-3">
             <button onClick={handleAdd} disabled={oos} className="btn-gold flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
               {oos ? "Out of Stock" : added ? "✓ Added to Cart" : "Add to Cart"}
             </button>
@@ -217,6 +217,21 @@ function ProductPage() {
               <Heart className={`w-5 h-5 ${liked ? "fill-noir" : ""}`} />
             </button>
           </div>
+          <button
+            onClick={() => !oos && setOrderOpen(true)}
+            disabled={oos}
+            className="btn-noir w-full mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Order Now via WhatsApp
+          </button>
+          <OrderNowModal
+            open={orderOpen}
+            onClose={() => setOrderOpen(false)}
+            product={product}
+            defaultVariant={size}
+            defaultQty={qty}
+          />
+
 
           <div className="grid grid-cols-3 gap-4 py-6 border-y border-border">
             {[
