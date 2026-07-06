@@ -1,14 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/products";
 import { toggleWishlist, useWishlist } from "@/lib/cart-store";
+import { OrderNowModal } from "@/components/OrderNowModal";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { has } = useWishlist();
   const liked = has(product.id);
   const oos = !product.inStock;
+  const [orderOpen, setOrderOpen] = useState(false);
+
+
 
   return (
     <motion.div
