@@ -4,8 +4,10 @@ import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { Heart, Minus, Plus, Shield, Truck, RotateCcw, Star, ChevronRight, ChevronLeft } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
+import { OrderNowModal } from "@/components/OrderNowModal";
 import { formatINR, productQueryOptions, productsQueryOptions } from "@/lib/products";
 import { addToCart, toggleWishlist, useWishlist } from "@/lib/cart-store";
+
 
 export const Route = createFileRoute("/products/$id")({
   loader: async ({ params, context }) => {
