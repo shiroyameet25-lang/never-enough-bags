@@ -48,7 +48,9 @@ function ProductPage() {
   const [size, setSize] = useState("Medium");
   const [activeIdx, setActiveIdx] = useState(0);
   const [added, setAdded] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   const { has } = useWishlist();
+
 
   if (!product) return null;
   const liked = has(product.id);
