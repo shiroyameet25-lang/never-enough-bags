@@ -85,6 +85,20 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           </div>
         </div>
       </Link>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!oos) setOrderOpen(true);
+        }}
+        disabled={oos}
+        className="mt-3 w-full border border-noir bg-transparent text-noir tracking-luxe text-xs py-3 hover:bg-noir hover:text-ivory transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {oos ? "Sold Out" : "Order Now"}
+      </button>
+      <OrderNowModal open={orderOpen} onClose={() => setOrderOpen(false)} product={product} />
     </motion.div>
   );
 }
+
