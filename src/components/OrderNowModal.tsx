@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/products";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/use-auth";
-import { Link } from "@tanstack/react-router";
 
 const STORE_WHATSAPP = "918866965656";
 
@@ -51,7 +47,6 @@ const initial: FormState = {
 export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQty }: Props) {
   const [form, setForm] = useState<FormState>(initial);
   const [submitting, setSubmitting] = useState(false);
-  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (open) {
@@ -93,64 +88,17 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || submitting) return;
-    if (!user) {
-      toast.error("Please sign in to place your order.");
-      return;
-    }
     setSubmitting(true);
 
     const wa = form.sameAsMobile || !form.whatsapp.trim() ? form.mobile : form.whatsapp;
-    const qty = Math.max(1, form.quantity);
-    const fullAddress = [form.address, `${form.city}, ${form.state}`].filter(Boolean).join(", ");
-
-    // Save order to database
-    const { data: inserted, error: insertErr } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        customer_name: form.fullName.trim(),
-        mobile: form.mobile.trim(),
-        address: fullAddress,
-        pincode: form.pincode.trim(),
-        landmark: form.notes.trim() || "",
-        items: [
-          {
-            id: product.id,
-            name: product.name,
-            brand: product.brand,
-            price: product.price,
-            qty,
-            image_url: product.imageUrl,
-            variant: form.variant || null,
-          },
-        ],
-        subtotal: total,
-        tax: 0,
-        total,
-        payment_status: "cod_whatsapp",
-        payment_reference: `WA-${Date.now()}`,
-        fulfillment_status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (insertErr) {
-      setSubmitting(false);
-      toast.error(insertErr.message || "Could not save your order. Please try again.");
-      return;
-    }
-
-    const orderId = inserted?.id ? `#${String(inserted.id).slice(0, 8).toUpperCase()}` : "";
-
     const lines = [
       "🛍️ *New Purse Order*",
-      orderId ? `Order: ${orderId}` : null,
       "",
       "*Product Details*",
       `• Product: ${product.name}`,
       `• Brand: ${product.brand}`,
       `• Price: ₹${product.price.toLocaleString("en-IN")}`,
-      `• Quantity: ${qty}`,
+      `• Quantity: ${form.quantity}`,
       form.variant ? `• Variant: ${form.variant}` : null,
       `• Total: ₹${total.toLocaleString("en-IN")}`,
       "",
@@ -167,18 +115,17 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
       form.notes ? "*Special Instructions*" : null,
       form.notes || null,
       "",
-      "🖼️ The product image is attached to this order in the admin panel.",
+      product.imageUrl ? `Product Image: ${product.imageUrl}` : null,
     ].filter(Boolean);
 
     const text = encodeURIComponent(lines.join("\n"));
     const url = `https://wa.me/${STORE_WHATSAPP}?text=${text}`;
 
-    toast.success("Order placed! Opening WhatsApp…");
     setTimeout(() => {
       window.open(url, "_blank", "noopener,noreferrer");
       setSubmitting(false);
       onClose();
-    }, 600);
+    }, 700);
   };
 
   return (
@@ -235,22 +182,11 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                   </div>
                 </div>
                 <p className="text-[11px] text-ivory/60 mt-4 font-light">
-                  Confirming saves your order and opens WhatsApp with the details pre-filled.
+                  Confirming will open WhatsApp with your order pre-filled. Just press Send.
                 </p>
               </aside>
 
               {/* Form */}
-              {!authLoading && !user ? (
-                <div className="p-8 space-y-4 text-center">
-                  <h3 className="text-display text-2xl">Sign in to place your order</h3>
-                  <p className="text-sm text-muted-foreground font-light">
-                    A quick sign-in lets us save your order securely and share the details with our team.
-                  </p>
-                  <Link to="/account" onClick={onClose} className="btn-gold inline-block">
-                    Sign in / Create account
-                  </Link>
-                </div>
-              ) : (
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <Field label="Full Name *">
                   <input
@@ -365,17 +301,16 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Placing order…
+                      Opening WhatsApp…
                     </>
                   ) : (
                     <>Confirm Order via WhatsApp</>
                   )}
                 </button>
                 <p className="text-[11px] text-center text-muted-foreground font-light">
-                  Your order is saved to your account and sent to our team on WhatsApp.
+                  You'll be redirected to WhatsApp with the full order pre-filled.
                 </p>
               </form>
-              )}
             </div>
           </motion.div>
         </motion.div>
