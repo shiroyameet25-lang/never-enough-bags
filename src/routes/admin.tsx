@@ -411,8 +411,8 @@ function OrderCard({ order, onStatusChange, onDelete }: { order: OrderRow; onSta
             <span className="text-xs text-muted-foreground">
               {date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
             </span>
-            <span className="text-[10px] tracking-luxe px-2 py-0.5 bg-green-700 text-white">
-              PAID ONLINE
+            <span className={`text-[10px] tracking-luxe px-2 py-0.5 text-white ${order.payment_status === "cod_whatsapp" ? "bg-champagne-deep" : "bg-green-700"}`}>
+              {order.payment_status === "cod_whatsapp" ? "WHATSAPP ORDER" : "PAID ONLINE"}
             </span>
           </div>
           <div className="text-display text-xl mb-1">{order.customer_name}</div>
