@@ -395,7 +395,7 @@ function OrdersPanel() {
   );
 }
 
-function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange: (id: string, s: FulfillmentStatus) => void | Promise<void> }) {
+function OrderCard({ order, onStatusChange, onDelete }: { order: OrderRow; onStatusChange: (id: string, s: FulfillmentStatus) => void | Promise<void>; onDelete: (id: string) => void | Promise<void> }) {
   const [open, setOpen] = useState(false);
   const date = new Date(order.created_at);
   const items = Array.isArray(order.items) ? order.items : [];
