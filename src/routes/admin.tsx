@@ -444,18 +444,29 @@ function OrderCard({ order, onStatusChange, onDelete }: { order: OrderRow; onSta
                 : ""
             }`}
           >
+            <option value="pending">Pending</option>
             <option value="processing">Processing</option>
+            <option value="confirmed">Confirmed</option>
             <option value="shipped">Shipped</option>
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="text-xs tracking-luxe text-champagne-deep hover:underline"
-          >
-            {open ? "Hide items" : `View ${items.length} item${items.length === 1 ? "" : "s"}`}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              className="text-xs tracking-luxe text-champagne-deep hover:underline"
+            >
+              {open ? "Hide items" : `View ${items.length} item${items.length === 1 ? "" : "s"}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(order.id)}
+              className="text-xs tracking-luxe text-destructive hover:underline"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
 
