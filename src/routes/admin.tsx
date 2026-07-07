@@ -14,7 +14,7 @@ import {
 } from "@/lib/products";
 import { useAuth, useIsAdmin } from "@/lib/use-auth";
 
-type FulfillmentStatus = "processing" | "shipped" | "delivered" | "cancelled";
+type FulfillmentStatus = "pending" | "processing" | "confirmed" | "shipped" | "delivered" | "cancelled";
 
 type OrderItem = {
   id: string;
@@ -297,9 +297,12 @@ function AdminDashboard() {
   );
 }
 
+const STATUS_OPTIONS: FulfillmentStatus[] = ["pending", "processing", "confirmed", "shipped", "delivered", "cancelled"];
+
 function OrdersPanel() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<"all" | FulfillmentStatus>("all");
+  const [orderSearch, setOrderSearch] = useState("");
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
@@ -313,10 +316,19 @@ function OrdersPanel() {
     },
   });
 
-  const filtered = useMemo(
-    () => (statusFilter === "all" ? orders : orders.filter((o) => o.fulfillment_status === statusFilter)),
-    [orders, statusFilter],
-  );
+  const filtered = useMemo(() => {
+    const q = orderSearch.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (statusFilter !== "all" && o.fulfillment_status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        o.id.toLowerCase().includes(q) ||
+        o.id.slice(0, 8).toLowerCase().includes(q) ||
+        o.customer_name.toLowerCase().includes(q) ||
+        o.mobile.toLowerCase().includes(q)
+      );
+    });
+  }, [orders, statusFilter, orderSearch]);
 
   const updateStatus = async (id: string, status: FulfillmentStatus) => {
     const { error } = await supabase
@@ -331,24 +343,40 @@ function OrdersPanel() {
     queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
   };
 
+  const deleteOrder = async (id: string) => {
+    if (!confirm("Delete this order? This cannot be undone.")) return;
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Order deleted");
+    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+  };
+
   return (
     <section className="py-10 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <div className="text-sm text-muted-foreground">
-            {orders.length} total · {orders.filter((o) => o.fulfillment_status === "processing").length} pending
-          </div>
+          <input
+            value={orderSearch}
+            onChange={(e) => setOrderSearch(e.target.value)}
+            placeholder="Search by Order ID, name or mobile…"
+            className="flex-1 min-w-[220px] bg-transparent border-b border-border py-2 focus:border-champagne outline-none text-sm"
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="border border-border bg-transparent px-3 py-2 text-sm tracking-luxe"
+            className="border border-border bg-transparent px-3 py-2 text-sm tracking-luxe capitalize"
           >
             <option value="all">All statuses</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s} className="capitalize">{s}</option>
+            ))}
           </select>
+        </div>
+        <div className="text-sm text-muted-foreground mb-4">
+          {filtered.length} of {orders.length} · Newest first
         </div>
 
         {isLoading ? (
@@ -358,7 +386,7 @@ function OrdersPanel() {
         ) : (
           <div className="space-y-4">
             {filtered.map((order) => (
-              <OrderCard key={order.id} order={order} onStatusChange={updateStatus} />
+              <OrderCard key={order.id} order={order} onStatusChange={updateStatus} onDelete={deleteOrder} />
             ))}
           </div>
         )}
@@ -367,7 +395,7 @@ function OrdersPanel() {
   );
 }
 
-function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange: (id: string, s: FulfillmentStatus) => void | Promise<void> }) {
+function OrderCard({ order, onStatusChange, onDelete }: { order: OrderRow; onStatusChange: (id: string, s: FulfillmentStatus) => void | Promise<void>; onDelete: (id: string) => void | Promise<void> }) {
   const [open, setOpen] = useState(false);
   const date = new Date(order.created_at);
   const items = Array.isArray(order.items) ? order.items : [];
@@ -383,8 +411,8 @@ function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange:
             <span className="text-xs text-muted-foreground">
               {date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
             </span>
-            <span className="text-[10px] tracking-luxe px-2 py-0.5 bg-green-700 text-white">
-              PAID ONLINE
+            <span className={`text-[10px] tracking-luxe px-2 py-0.5 text-white ${order.payment_status === "cod_whatsapp" ? "bg-champagne-deep" : "bg-green-700"}`}>
+              {order.payment_status === "cod_whatsapp" ? "WHATSAPP ORDER" : "PAID ONLINE"}
             </span>
           </div>
           <div className="text-display text-xl mb-1">{order.customer_name}</div>
@@ -416,18 +444,29 @@ function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange:
                 : ""
             }`}
           >
+            <option value="pending">Pending</option>
             <option value="processing">Processing</option>
+            <option value="confirmed">Confirmed</option>
             <option value="shipped">Shipped</option>
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="text-xs tracking-luxe text-champagne-deep hover:underline"
-          >
-            {open ? "Hide items" : `View ${items.length} item${items.length === 1 ? "" : "s"}`}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              className="text-xs tracking-luxe text-champagne-deep hover:underline"
+            >
+              {open ? "Hide items" : `View ${items.length} item${items.length === 1 ? "" : "s"}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(order.id)}
+              className="text-xs tracking-luxe text-destructive hover:underline"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
 
