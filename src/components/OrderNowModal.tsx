@@ -153,35 +153,69 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     }
 
     // 2. Only after DB save succeeds, open WhatsApp
-    const lines = [
-      "🛍️ *New Purse Order*",
-      `Order ID: ${orderId.slice(0, 8).toUpperCase()}`,
+    const rupee = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const productUrl = `${origin}/products/${product.id}`;
+    const orderShortId = orderId.slice(0, 8).toUpperCase();
+    const orderDateTime = new Date().toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Asia/Kolkata",
+    });
+    const divider = "━━━━━━━━━━━━━━━━━━━━";
+
+    const lines: (string | null)[] = [
+      "🛍️ *NEW ORDER - NEEVA BAGS*",
       "",
-      "*Product Details*",
-      `• Product: ${product.name}`,
-      `• Brand: ${product.brand}`,
-      `• Price: ₹${product.price.toLocaleString("en-IN")}`,
-      `• Quantity: ${form.quantity}`,
-      form.variant ? `• Variant: ${form.variant}` : null,
-      `• Total: ₹${subtotal.toLocaleString("en-IN")}`,
+      divider,
       "",
-      "*Customer Details*",
-      `• Name: ${form.fullName}`,
-      `• Mobile: ${form.mobile}`,
-      `• WhatsApp: ${wa}`,
-      form.email ? `• Email: ${form.email}` : null,
+      "👤 *CUSTOMER DETAILS*",
       "",
-      "*Delivery Address*",
+      `🧑 Name: ${form.fullName}`,
+      `📞 Phone: ${form.mobile}`,
+      `💬 WhatsApp: ${wa}`,
+      form.email ? `📧 Email: ${form.email}` : null,
+      "",
+      "📍 *DELIVERY ADDRESS*",
       form.address,
       `${form.city}, ${form.state} - ${form.pincode}`,
-      form.notes ? "" : null,
-      form.notes ? "*Special Instructions*" : null,
-      form.notes || null,
       "",
-      product.imageUrl ? `Product Image: ${product.imageUrl}` : null,
-    ].filter(Boolean);
+      divider,
+      "",
+      "🛒 *ORDER ITEMS*",
+      "",
+      `👜 *${product.name}*`,
+      `🏷️ Brand: ${product.brand}`,
+      product.imageUrl ? `🖼️ Image: ${product.imageUrl}` : null,
+      `🔗 Product: ${productUrl}`,
+      form.variant ? `🎨 Color/Variant: ${form.variant}` : null,
+      `🔢 Quantity: ${form.quantity}`,
+      `💵 Price: ${rupee(product.price)}`,
+      `💰 Item Total: ${rupee(subtotal)}`,
+      "",
+      divider,
+      "",
+      "💳 *PAYMENT DETAILS*",
+      "💵 Payment Method: WhatsApp / Pay on Confirmation",
+      "",
+      `💰 Subtotal: ${rupee(subtotal)}`,
+      `🚚 Shipping: Free`,
+      `✅ *Grand Total: ${rupee(subtotal)}*`,
+      "",
+      divider,
+      "",
+      form.notes ? "📝 *CUSTOMER NOTE*" : null,
+      form.notes ? form.notes : null,
+      form.notes ? "" : null,
+      `🕒 Order Date & Time: ${orderDateTime}`,
+      `🆔 Order ID: ${orderShortId}`,
+      "",
+      divider,
+      "",
+      "✅ Thank you for shopping with *Neeva Bags* ❤️",
+    ];
 
-    const text = encodeURIComponent(lines.join("\n"));
+    const text = encodeURIComponent(lines.filter((l) => l !== null).join("\n"));
     const url = `https://wa.me/${STORE_WHATSAPP}?text=${text}`;
 
     toast.success("Order saved! Opening WhatsApp…");
@@ -189,6 +223,7 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     setSubmitting(false);
     onClose();
   };
+
 
 
 
