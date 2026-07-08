@@ -95,11 +95,67 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || submitting) return;
+    if (!user) {
+      toast.error("Please sign in to place your order");
+      return;
+    }
     setSubmitting(true);
 
     const wa = form.sameAsMobile || !form.whatsapp.trim() ? form.mobile : form.whatsapp;
+    const fullAddress = `${form.address.trim()}, ${form.city.trim()}, ${form.state.trim()}`;
+    const landmark = [
+      form.variant ? `Variant: ${form.variant}` : null,
+      form.email ? `Email: ${form.email}` : null,
+      !form.sameAsMobile && form.whatsapp ? `WhatsApp: ${wa}` : null,
+      form.notes ? `Notes: ${form.notes}` : null,
+    ].filter(Boolean).join(" | ") || "—";
+
+    const subtotal = product.price * form.quantity;
+    const paymentRef = `WA${Date.now().toString(36).toUpperCase()}`;
+
+    // 1. Save order to database FIRST
+    let orderId: string;
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          customer_name: form.fullName.trim(),
+          mobile: form.mobile.trim(),
+          address: fullAddress,
+          pincode: form.pincode.trim(),
+          landmark,
+          items: [{
+            id: product.id,
+            name: product.name,
+            brand: product.brand,
+            price: product.price,
+            qty: form.quantity,
+            variant: form.variant || null,
+            image_url: product.imageUrl,
+          }],
+          subtotal,
+          tax: 0,
+          total: subtotal,
+          payment_status: "whatsapp_pending",
+          payment_reference: paymentRef,
+          fulfillment_status: "processing",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      orderId = data.id;
+    } catch (err) {
+      setSubmitting(false);
+      const msg = err instanceof Error ? err.message : "Failed to save your order";
+      toast.error(`${msg}. Please try again.`);
+      return;
+    }
+
+    // 2. Only after DB save succeeds, open WhatsApp
     const lines = [
       "🛍️ *New Purse Order*",
+      `Order ID: ${orderId.slice(0, 8).toUpperCase()}`,
       "",
       "*Product Details*",
       `• Product: ${product.name}`,
@@ -107,7 +163,7 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
       `• Price: ₹${product.price.toLocaleString("en-IN")}`,
       `• Quantity: ${form.quantity}`,
       form.variant ? `• Variant: ${form.variant}` : null,
-      `• Total: ₹${total.toLocaleString("en-IN")}`,
+      `• Total: ₹${subtotal.toLocaleString("en-IN")}`,
       "",
       "*Customer Details*",
       `• Name: ${form.fullName}`,
@@ -128,12 +184,13 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     const text = encodeURIComponent(lines.join("\n"));
     const url = `https://wa.me/${STORE_WHATSAPP}?text=${text}`;
 
-    setTimeout(() => {
-      window.open(url, "_blank", "noopener,noreferrer");
-      setSubmitting(false);
-      onClose();
-    }, 700);
+    toast.success("Order saved! Opening WhatsApp…");
+    window.open(url, "_blank", "noopener,noreferrer");
+    setSubmitting(false);
+    onClose();
   };
+
+
 
   return (
     <AnimatePresence>
