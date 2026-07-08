@@ -52,6 +52,8 @@ const initial: FormState = {
 export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQty }: Props) {
   const [form, setForm] = useState<FormState>(initial);
   const [submitting, setSubmitting] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+
 
   useEffect(() => {
     if (open) {
