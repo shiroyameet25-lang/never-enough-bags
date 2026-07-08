@@ -357,23 +357,37 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                   />
                 </Field>
 
+                {!authLoading && !user && (
+                  <div className="flex items-start gap-3 border border-champagne/40 bg-blush/20 p-3 text-xs">
+                    <AlertCircle className="w-4 h-4 text-champagne-deep shrink-0 mt-0.5" />
+                    <p className="text-noir/80">
+                      Please{" "}
+                      <Link to="/account" className="underline text-champagne-deep font-medium">
+                        sign in
+                      </Link>{" "}
+                      to place your order. Your order will be saved to your account before WhatsApp opens.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={!isValid || submitting}
+                  disabled={!isValid || submitting || !user}
                   className="btn-gold w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Opening WhatsApp…
+                      Saving order…
                     </>
                   ) : (
-                    <>Confirm Order via WhatsApp</>
+                    <>Place Order & Open WhatsApp</>
                   )}
                 </button>
                 <p className="text-[11px] text-center text-muted-foreground font-light">
-                  You'll be redirected to WhatsApp with the full order pre-filled.
+                  Your order is saved to the admin panel first, then WhatsApp opens with the full details pre-filled.
                 </p>
+
               </form>
             </div>
           </motion.div>
