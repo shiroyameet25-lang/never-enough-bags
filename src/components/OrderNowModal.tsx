@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertCircle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/products";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/use-auth";
 
 const STORE_WHATSAPP = "918866965656";
+
 
 type Props = {
   open: boolean;
