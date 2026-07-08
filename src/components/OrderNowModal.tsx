@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertCircle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/products";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/use-auth";
 
 const STORE_WHATSAPP = "918866965656";
+
 
 type Props = {
   open: boolean;
@@ -47,6 +52,8 @@ const initial: FormState = {
 export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQty }: Props) {
   const [form, setForm] = useState<FormState>(initial);
   const [submitting, setSubmitting] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+
 
   useEffect(() => {
     if (open) {
@@ -88,11 +95,67 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || submitting) return;
+    if (!user) {
+      toast.error("Please sign in to place your order");
+      return;
+    }
     setSubmitting(true);
 
     const wa = form.sameAsMobile || !form.whatsapp.trim() ? form.mobile : form.whatsapp;
+    const fullAddress = `${form.address.trim()}, ${form.city.trim()}, ${form.state.trim()}`;
+    const landmark = [
+      form.variant ? `Variant: ${form.variant}` : null,
+      form.email ? `Email: ${form.email}` : null,
+      !form.sameAsMobile && form.whatsapp ? `WhatsApp: ${wa}` : null,
+      form.notes ? `Notes: ${form.notes}` : null,
+    ].filter(Boolean).join(" | ") || "—";
+
+    const subtotal = product.price * form.quantity;
+    const paymentRef = `WA${Date.now().toString(36).toUpperCase()}`;
+
+    // 1. Save order to database FIRST
+    let orderId: string;
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          customer_name: form.fullName.trim(),
+          mobile: form.mobile.trim(),
+          address: fullAddress,
+          pincode: form.pincode.trim(),
+          landmark,
+          items: [{
+            id: product.id,
+            name: product.name,
+            brand: product.brand,
+            price: product.price,
+            qty: form.quantity,
+            variant: form.variant || null,
+            image_url: product.imageUrl,
+          }],
+          subtotal,
+          tax: 0,
+          total: subtotal,
+          payment_status: "whatsapp_pending",
+          payment_reference: paymentRef,
+          fulfillment_status: "processing",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      orderId = data.id;
+    } catch (err) {
+      setSubmitting(false);
+      const msg = err instanceof Error ? err.message : "Failed to save your order";
+      toast.error(`${msg}. Please try again.`);
+      return;
+    }
+
+    // 2. Only after DB save succeeds, open WhatsApp
     const lines = [
       "🛍️ *New Purse Order*",
+      `Order ID: ${orderId.slice(0, 8).toUpperCase()}`,
       "",
       "*Product Details*",
       `• Product: ${product.name}`,
@@ -100,7 +163,7 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
       `• Price: ₹${product.price.toLocaleString("en-IN")}`,
       `• Quantity: ${form.quantity}`,
       form.variant ? `• Variant: ${form.variant}` : null,
-      `• Total: ₹${total.toLocaleString("en-IN")}`,
+      `• Total: ₹${subtotal.toLocaleString("en-IN")}`,
       "",
       "*Customer Details*",
       `• Name: ${form.fullName}`,
@@ -121,12 +184,13 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     const text = encodeURIComponent(lines.join("\n"));
     const url = `https://wa.me/${STORE_WHATSAPP}?text=${text}`;
 
-    setTimeout(() => {
-      window.open(url, "_blank", "noopener,noreferrer");
-      setSubmitting(false);
-      onClose();
-    }, 700);
+    toast.success("Order saved! Opening WhatsApp…");
+    window.open(url, "_blank", "noopener,noreferrer");
+    setSubmitting(false);
+    onClose();
   };
+
+
 
   return (
     <AnimatePresence>
@@ -293,23 +357,37 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                   />
                 </Field>
 
+                {!authLoading && !user && (
+                  <div className="flex items-start gap-3 border border-champagne/40 bg-blush/20 p-3 text-xs">
+                    <AlertCircle className="w-4 h-4 text-champagne-deep shrink-0 mt-0.5" />
+                    <p className="text-noir/80">
+                      Please{" "}
+                      <Link to="/account" className="underline text-champagne-deep font-medium">
+                        sign in
+                      </Link>{" "}
+                      to place your order. Your order will be saved to your account before WhatsApp opens.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={!isValid || submitting}
+                  disabled={!isValid || submitting || !user}
                   className="btn-gold w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Opening WhatsApp…
+                      Saving order…
                     </>
                   ) : (
-                    <>Confirm Order via WhatsApp</>
+                    <>Place Order & Open WhatsApp</>
                   )}
                 </button>
                 <p className="text-[11px] text-center text-muted-foreground font-light">
-                  You'll be redirected to WhatsApp with the full order pre-filled.
+                  Your order is saved to the admin panel first, then WhatsApp opens with the full details pre-filled.
                 </p>
+
               </form>
             </div>
           </motion.div>
