@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, Package, Truck, BadgeIndianRupee, Star, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
