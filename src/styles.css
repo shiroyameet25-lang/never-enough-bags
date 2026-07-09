@@ -101,6 +101,32 @@
   }
 }
 
+/* Global responsive fixes — no design change, only spacing/ratio */
+img, video, canvas, svg { max-width: 100%; height: auto; }
+img[width][height] { height: auto; }
+
+/* Prevent any child from forcing horizontal overflow */
+#root { width: 100%; max-width: 100vw; overflow-x: clip; }
+
+/* Fluid horizontal padding for standard content containers.
+   Tightens on small phones, breathes on ultra-wide, without changing layout intent. */
+@media (max-width: 480px) {
+  .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .lg\:px-10 { padding-left: 1rem; padding-right: 1rem; }
+}
+
+/* Allow flagship containers to use more of the viewport on ultra-wide screens */
+@media (min-width: 1600px) {
+  .max-w-7xl { max-width: 1520px; }
+  .max-w-6xl { max-width: 1360px; }
+}
+@media (min-width: 1920px) {
+  .max-w-7xl { max-width: 1720px; }
+  .max-w-6xl { max-width: 1520px; }
+}
+
+
+
 
 /* Luxury utilities */
 @utility text-display {
