@@ -27,9 +27,10 @@ export function Navbar() {
 
   return (
     <>
-      <div className="bg-noir text-ivory text-center py-2 tracking-luxe">
+      <div className="bg-noir text-ivory text-center py-2 tracking-luxe px-3 text-[0.6rem] sm:text-[0.7rem] leading-tight">
         Complimentary Shipping Across India · COD Available
       </div>
+
 
       <header className={`sticky top-0 z-50 transition-all duration-500 ${scrolled ? "glass-nav-solid" : "glass-nav"}`}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">

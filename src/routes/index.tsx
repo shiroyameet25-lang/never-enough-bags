@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, Package, Truck, BadgeIndianRupee, Star, Instagram } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -56,7 +56,7 @@ function BrandStrip() {
 }
 
 function NewArrivals() {
-  const { data: products = [] } = useQuery(productsQueryOptions);
+  const { data: products = [] } = useSuspenseQuery(productsQueryOptions);
   const items = products.slice(0, 8);
   return (
     <section className="py-24 bg-background">
@@ -163,7 +163,7 @@ function Testimonials() {
 }
 
 function Gallery() {
-  const { data: products = [] } = useQuery(productsQueryOptions);
+  const { data: products = [] } = useSuspenseQuery(productsQueryOptions);
   const images = products.slice(0, 6);
   if (images.length === 0) return null;
   return (
