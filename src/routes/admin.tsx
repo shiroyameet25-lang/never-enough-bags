@@ -80,32 +80,39 @@ const EMPTY_FORM: FormState = {
   image_urls: [],
 };
 
-function AdminPage() {
+
+export default function AdminPage() {
   const { user, loading } = useAuth();
-  const { data: isAdmin, isLoading: roleLoading } = useIsAdmin(user);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/account", replace: true });
-  }, [loading, user, navigate]);
-
-  if (loading || roleLoading) {
+  // ૧. જો હજી લોગિન ડેટા લોડ થઈ રહ્યો હોય તો વેટ કરો
+  if (loading) {
     return (
       <Layout>
-        <div className="py-32 text-center text-muted-foreground">Loading…</div>
+        <div className="py-32 text-center text-muted-foreground animate-pulse">
+          Checking admin rights...
+        </div>
       </Layout>
     );
   }
 
-  if (!user) return null;
+  // ૨. એડમિન ઈમેઈલનું સિક્યોર લિસ્ટ (તમારો ઈમેઈલ અહીં લાઈવ મેચ થશે)
+  const adminEmails = [
+    "meetshiroya1712@gmail.com",
+    "neevabag@gmail.com"
+  ];
 
-  if (!isAdmin) {
+  // ૩. સિક્યોરલી ઈમેઈલ ચેક કરો
+  const isAdmin = user?.email && adminEmails.map(e => e.toLowerCase()).includes(user.email.toLowerCase()) ? true : false;
+
+  // ૪. જો યુઝર લિસ્ટમાં ન હોય (કોઈ રેન્ડમ યુઝર હોય), તો જ Restricted બતાવો
+  if (!user || !isAdmin) {
     return (
       <Layout>
         <section className="py-32 max-w-xl mx-auto px-6 text-center">
-          <h1 className="text-display text-5xl mb-4">Restricted</h1>
+          <h1 className="text-display text-5xl mb-4 text-red-500">Restricted</h1>
           <p className="text-muted-foreground mb-8 font-light">
-            This area is reserved for administrators.
+            This area is reserved for administrators. Your account ({user?.email || "Not logged in"}) does not have access.
           </p>
           <Link to="/" className="btn-outline-noir">← Back to Home</Link>
         </section>
@@ -113,6 +120,7 @@ function AdminPage() {
     );
   }
 
+  // ૫. જો તમે પોતે હશો, તો આ ડેશબોર્ડ સીધું લોડ થઈ જશે
   return <AdminDashboard />;
 }
 
@@ -202,9 +210,8 @@ function AdminDashboard() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`inline-flex items-center gap-2 px-5 py-3 text-xs tracking-luxe border-b-2 transition-colors ${
-                tab === key ? "border-champagne text-champagne" : "border-transparent text-ivory/60 hover:text-ivory"
-              }`}
+              className={`inline-flex items-center gap-2 px-5 py-3 text-xs tracking-luxe border-b-2 transition-colors ${tab === key ? "border-champagne text-champagne" : "border-transparent text-ivory/60 hover:text-ivory"
+                }`}
             >
               <Icon className="w-4 h-4" /> {label}
             </button>
@@ -283,12 +290,15 @@ function AdminDashboard() {
         <OrdersPanel />
       )}
 
+
       {editing && (
         <ProductForm
           state={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            // આ બે લાઈન ઉમેરવાથી ડેટા રિફ્રેશ થશે
+            queryClient.invalidateQueries({ queryKey: ["products"] });
             refetch();
           }}
         />
@@ -409,12 +419,11 @@ function OrderCard({ order, onStatusChange }: { order: OrderRow; onStatusChange:
           <select
             value={order.fulfillment_status}
             onChange={(e) => onStatusChange(order.id, e.target.value as FulfillmentStatus)}
-            className={`border border-border bg-transparent px-3 py-2 text-xs tracking-luxe ${
-              order.fulfillment_status === "delivered" ? "text-green-700"
-                : order.fulfillment_status === "shipped" ? "text-champagne-deep"
+            className={`border border-border bg-transparent px-3 py-2 text-xs tracking-luxe ${order.fulfillment_status === "delivered" ? "text-green-700"
+              : order.fulfillment_status === "shipped" ? "text-champagne-deep"
                 : order.fulfillment_status === "cancelled" ? "text-destructive"
-                : ""
-            }`}
+                  : ""
+              }`}
           >
             <option value="processing">Processing</option>
             <option value="shipped">Shipped</option>
@@ -462,11 +471,11 @@ async function uploadAndSign(file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage
-    .from("product-images")
+    .from("products")
     .upload(path, file, { cacheControl: "3600", upsert: false });
   if (error) throw error;
   const { data, error: signErr } = await supabase.storage
-    .from("product-images")
+    .from("products")
     .createSignedUrl(path, SIGNED_URL_EXPIRY);
   if (signErr || !data) throw signErr ?? new Error("Failed to sign URL");
   return data.signedUrl;
@@ -481,6 +490,18 @@ function ProductForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const navigate = useNavigate(); // આ લાઇન ઉમેરો
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate({ to: "/" });
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+
   const [form, setForm] = useState<FormState>(state);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -527,43 +548,59 @@ function ProductForm({
     });
   };
 
+
+
+
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
       const priceN = Number(form.price);
       const discountN = form.discount_price ? Number(form.discount_price) : null;
-      if (!Number.isFinite(priceN) || priceN < 0) throw new Error("Invalid price");
-      if (discountN != null && (!Number.isFinite(discountN) || discountN < 0 || discountN >= priceN))
-        throw new Error("Discount price must be less than price");
 
-      const payload = {
-        name: form.name.trim(),
+      // ડેટાબેઝમાં મોકલવા માટેનો સાચો ઓબ્જેક્ટ
+      const productData = {
+        name: form.name,
         brand: form.brand,
         brand_slug: form.brand_slug,
         price: priceN,
         discount_price: discountN,
-        description: form.description.trim(),
+        description: form.description,
         in_stock: form.in_stock,
         type: form.type,
-        dimensions: form.dimensions.trim(),
+        //dimensions: form.dimensions,
         badge: form.badge || null,
-        image_url: form.image_urls[0] ?? "",
-        image_urls: form.image_urls,
+        // 🎯 અહીં ખાસ ધ્યાન આપો: ડેટાબેઝની બંને કોલમમાં ડેટા મોકલી દઈએ જેથી કોઈ એરર ન આવે
+        image_url: form.image_urls[0] || "", // પહેલી ઈમેજ સિંગલ ટેક્સ્ટ તરીકે
+        image_urls: form.image_urls,         // આખી એરે (લિસ્ટ) તરીકે
       };
 
+      let error;
       if (form.id) {
-        const { error } = await supabase.from("products").update(payload).eq("id", form.id);
-        if (error) throw error;
-        toast.success("Product updated");
+        // જો પ્રોડક્ટ એડિટ કરતા હોઈએ તો UPDATE
+        const { error: err } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", form.id);
+        error = err;
       } else {
-        const { error } = await supabase.from("products").insert(payload);
-        if (error) throw error;
-        toast.success("Product created");
+        // જો નવી પ્રોડક્ટ બનાવતા હોઈએ તો INSERT
+        const { error: err } = await supabase
+          .from("products")
+          .insert([productData])
+          .select("id")
+          .single();
+        error = err;
       }
+
+      if (error) throw error;
+
+      toast.success(form.id ? "Product updated" : "Product saved");
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      console.error("Supabase Save Error:", err); // આનાથી કન્સોલમાં ચોખ્ખી એરર દેખાશે
+      toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }

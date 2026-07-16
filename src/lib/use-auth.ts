@@ -21,20 +21,24 @@ export function useAuth() {
   return { session, user: session?.user ?? null, loading };
 }
 
+
+
 export function useIsAdmin(user: User | null | undefined) {
   return useQuery({
     queryKey: ["is-admin", user?.id ?? "anon"],
     enabled: !!user,
     queryFn: async () => {
       if (!user) return false;
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (error) throw error;
-      return !!data;
+
+      // એડમિન ઈમેઈલનું સિક્યોર લિસ્ટ
+      const adminEmails = [
+        "meetshiroya1712@gmail.com",
+        "neevabag@gmail.com"
+      ];
+
+      // ડાયરેક્ટ ઈમેઈલ ચેક કરીને ટ્રુ કે ફોલ્સ રિટર્ન કરો
+      const isMatch = user.email && adminEmails.map(e => e.toLowerCase()).includes(user.email.toLowerCase());
+      return !!isMatch;
     },
   });
 }
