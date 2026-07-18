@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, AlertCircle } from "lucide-react";
@@ -9,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 
 const STORE_WHATSAPP = "918866965656";
-
 
 type Props = {
   open: boolean;
@@ -50,10 +50,15 @@ const initial: FormState = {
 };
 
 export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQty }: Props) {
+  // SUDHARO 1: Hydration error માટે isMounted સ્ટેટ
+  const [isMounted, setIsMounted] = useState(false);
   const [form, setForm] = useState<FormState>(initial);
   const [submitting, setSubmitting] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -102,29 +107,27 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     setSubmitting(true);
 
     const wa = form.sameAsMobile || !form.whatsapp.trim() ? form.mobile : form.whatsapp;
-    const fullAddress = `${form.address.trim()}, ${form.city.trim()}, ${form.state.trim()}`;
-    const landmark = [
-      form.variant ? `Variant: ${form.variant}` : null,
-      form.email ? `Email: ${form.email}` : null,
-      !form.sameAsMobile && form.whatsapp ? `WhatsApp: ${wa}` : null,
-      form.notes ? `Notes: ${form.notes}` : null,
-    ].filter(Boolean).join(" | ") || "—";
-
     const subtotal = product.price * form.quantity;
     const paymentRef = `WA${Date.now().toString(36).toUpperCase()}`;
 
-    // 1. Save order to database FIRST
     let orderId: string;
     try {
       const { data, error } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
-          customer_name: form.fullName.trim(),
+          fullname: form.fullName.trim(),
           mobile: form.mobile.trim(),
-          address: fullAddress,
+          whatsapp: form.sameAsMobile ? form.mobile : form.whatsapp.trim(),
+          email: form.email.trim(),
+          address: form.address.trim(),
+          city: form.city.trim(),
+          state: form.state.trim(),
           pincode: form.pincode.trim(),
-          landmark,
+          quantity: form.quantity,
+          variant: form.variant || null,
+          notes: form.notes.trim(),
+          sameAsMobile: form.sameAsMobile,
           items: [{
             id: product.id,
             name: product.name,
@@ -134,15 +137,18 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
             variant: form.variant || null,
             image_url: product.imageUrl,
           }],
-          subtotal,
-          tax: 0,
+          subtotal: subtotal,
           total: subtotal,
+          tax: 0,
           payment_status: "whatsapp_pending",
           payment_reference: paymentRef,
           fulfillment_status: "processing",
+          landmark: ""
         })
-        .select("id")
+        // SUDHARO 2: Supabase 400 error માટે .select("id") કાઢી નાખ્યું
+        .select()
         .single();
+
       if (error) throw error;
       orderId = data.id;
     } catch (err) {
@@ -152,7 +158,6 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
       return;
     }
 
-    // 2. Only after DB save succeeds, open WhatsApp
     const rupee = (n: number) => `₹${n.toLocaleString("en-IN")}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const productUrl = `${origin}/products/${product.id}`;
@@ -166,24 +171,15 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
 
     const lines: (string | null)[] = [
       "🛍️ *NEW ORDER - NEEVA BAGS*",
-      "",
-      divider,
-      "",
-      "👤 *CUSTOMER DETAILS*",
-      "",
+      "", divider, "", "👤 *CUSTOMER DETAILS*", "",
       `🧑 Name: ${form.fullName}`,
       `📞 Phone: ${form.mobile}`,
       `💬 WhatsApp: ${wa}`,
       form.email ? `📧 Email: ${form.email}` : null,
-      "",
-      "📍 *DELIVERY ADDRESS*",
+      "", "📍 *DELIVERY ADDRESS*",
       form.address,
       `${form.city}, ${form.state} - ${form.pincode}`,
-      "",
-      divider,
-      "",
-      "🛒 *ORDER ITEMS*",
-      "",
+      "", divider, "", "🛒 *ORDER ITEMS*", "",
       `👜 *${product.name}*`,
       `🏷️ Brand: ${product.brand}`,
       product.imageUrl ? `🖼️ Image: ${product.imageUrl}` : null,
@@ -192,26 +188,18 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
       `🔢 Quantity: ${form.quantity}`,
       `💵 Price: ${rupee(product.price)}`,
       `💰 Item Total: ${rupee(subtotal)}`,
-      "",
-      divider,
-      "",
-      "💳 *PAYMENT DETAILS*",
+      "", divider, "", "💳 *PAYMENT DETAILS*",
       "💵 Payment Method: WhatsApp / Pay on Confirmation",
-      "",
-      `💰 Subtotal: ${rupee(subtotal)}`,
+      "", `💰 Subtotal: ${rupee(subtotal)}`,
       `🚚 Shipping: Free`,
       `✅ *Grand Total: ${rupee(subtotal)}*`,
-      "",
-      divider,
-      "",
+      "", divider, "",
       form.notes ? "📝 *CUSTOMER NOTE*" : null,
       form.notes ? form.notes : null,
       form.notes ? "" : null,
       `🕒 Order Date & Time: ${orderDateTime}`,
       `🆔 Order ID: ${orderShortId}`,
-      "",
-      divider,
-      "",
+      "", divider, "",
       "✅ Thank you for shopping with *Neeva Bags* ❤️",
     ];
 
@@ -224,8 +212,8 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
     onClose();
   };
 
-
-
+  // SUDHARO 3: Hydration error માટે return null
+  if (!isMounted) return null;
 
   return (
     <AnimatePresence>
@@ -259,14 +247,10 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                 <X className="w-4 h-4" />
               </button>
             </div>
-
             <div className="grid md:grid-cols-[1fr_1.2fr] gap-0">
-              {/* Order summary */}
               <aside className="p-6 bg-noir text-ivory md:sticky md:top-[73px] md:self-start">
                 <div className="aspect-[4/5] bg-noir/40 overflow-hidden mb-5 border border-champagne/20">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                  ) : null}
+                  {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" /> : null}
                 </div>
                 <div className="tracking-luxe text-champagne text-xs mb-1">{product.brand}</div>
                 <h3 className="text-display text-xl mb-4 leading-tight">{product.name}</h3>
@@ -280,70 +264,28 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                     <span className="text-display text-2xl text-champagne">{formatINR(total)}</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-ivory/60 mt-4 font-light">
-                  Confirming will open WhatsApp with your order pre-filled. Just press Send.
-                </p>
               </aside>
-
-              {/* Form */}
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <Field label="Full Name *">
-                  <input
-                    required
-                    value={form.fullName}
-                    onChange={(e) => update("fullName", e.target.value)}
-                    className={inp}
-                    placeholder="e.g. Aanya Sharma"
-                  />
+                  <input required value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className={inp} placeholder="e.g. Aanya Sharma" />
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Mobile Number *">
-                    <input
-                      required
-                      inputMode="tel"
-                      value={form.mobile}
-                      onChange={(e) => update("mobile", e.target.value)}
-                      className={inp}
-                      placeholder="10-digit mobile"
-                    />
+                    <input required inputMode="tel" value={form.mobile} onChange={(e) => update("mobile", e.target.value)} className={inp} placeholder="10-digit mobile" />
                   </Field>
                   <Field label="WhatsApp Number">
-                    <input
-                      value={form.sameAsMobile ? form.mobile : form.whatsapp}
-                      disabled={form.sameAsMobile}
-                      onChange={(e) => update("whatsapp", e.target.value)}
-                      className={`${inp} disabled:opacity-60`}
-                      placeholder="Same as mobile"
-                    />
+                    <input value={form.sameAsMobile ? form.mobile : form.whatsapp} disabled={form.sameAsMobile} onChange={(e) => update("whatsapp", e.target.value)} className={`${inp} disabled:opacity-60`} placeholder="Same as mobile" />
                     <label className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={form.sameAsMobile}
-                        onChange={(e) => update("sameAsMobile", e.target.checked)}
-                        className="accent-champagne-deep"
-                      />
+                      <input type="checkbox" checked={form.sameAsMobile} onChange={(e) => update("sameAsMobile", e.target.checked)} className="accent-champagne-deep" />
                       Same as mobile number
                     </label>
                   </Field>
                 </div>
                 <Field label="Email (optional)">
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    className={inp}
-                    placeholder="you@example.com"
-                  />
+                  <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className={inp} placeholder="you@example.com" />
                 </Field>
                 <Field label="Full Delivery Address *">
-                  <textarea
-                    required
-                    rows={2}
-                    value={form.address}
-                    onChange={(e) => update("address", e.target.value)}
-                    className={`${inp} resize-none`}
-                    placeholder="House / Flat, Street, Landmark"
-                  />
+                  <textarea required rows={2} value={form.address} onChange={(e) => update("address", e.target.value)} className={`${inp} resize-none`} placeholder="House / Flat, Street, Landmark" />
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Field label="City *">
@@ -353,76 +295,29 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
                     <input required value={form.state} onChange={(e) => update("state", e.target.value)} className={inp} />
                   </Field>
                   <Field label="PIN Code *">
-                    <input
-                      required
-                      inputMode="numeric"
-                      value={form.pincode}
-                      onChange={(e) => update("pincode", e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      className={inp}
-                    />
+                    <input required inputMode="numeric" value={form.pincode} onChange={(e) => update("pincode", e.target.value.replace(/\D/g, "").slice(0, 8))} className={inp} />
                   </Field>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Quantity *">
-                    <input
-                      required
-                      type="number"
-                      min={1}
-                      value={form.quantity}
-                      onChange={(e) => update("quantity", Math.max(1, Number(e.target.value) || 1))}
-                      className={inp}
-                    />
+                    <input required type="number" min={1} value={form.quantity} onChange={(e) => update("quantity", Math.max(1, Number(e.target.value) || 1))} className={inp} />
                   </Field>
                   <Field label="Color / Variant">
-                    <input
-                      value={form.variant}
-                      onChange={(e) => update("variant", e.target.value)}
-                      className={inp}
-                      placeholder="e.g. Champagne Gold"
-                    />
+                    <input value={form.variant} onChange={(e) => update("variant", e.target.value)} className={inp} placeholder="e.g. Champagne Gold" />
                   </Field>
                 </div>
                 <Field label="Special Instructions">
-                  <textarea
-                    rows={2}
-                    value={form.notes}
-                    onChange={(e) => update("notes", e.target.value)}
-                    className={`${inp} resize-none`}
-                    placeholder="Gift wrap, delivery preference, etc."
-                  />
+                  <textarea rows={2} value={form.notes} onChange={(e) => update("notes", e.target.value)} className={`${inp} resize-none`} placeholder="Gift wrap, delivery preference, etc." />
                 </Field>
-
                 {!authLoading && !user && (
                   <div className="flex items-start gap-3 border border-champagne/40 bg-blush/20 p-3 text-xs">
                     <AlertCircle className="w-4 h-4 text-champagne-deep shrink-0 mt-0.5" />
-                    <p className="text-noir/80">
-                      Please{" "}
-                      <Link to="/account" className="underline text-champagne-deep font-medium">
-                        sign in
-                      </Link>{" "}
-                      to place your order. Your order will be saved to your account before WhatsApp opens.
-                    </p>
+                    <p className="text-noir/80">Please <Link to="/account" className="underline text-champagne-deep font-medium">sign in</Link> to place your order.</p>
                   </div>
                 )}
-
-                <button
-                  type="submit"
-                  disabled={!isValid || submitting || !user}
-                  className="btn-gold w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving order…
-                    </>
-                  ) : (
-                    <>Place Order & Open WhatsApp</>
-                  )}
+                <button type="submit" disabled={!isValid || submitting || !user} className="btn-gold w-full mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving order…</> : <>Place Order & Open WhatsApp</>}
                 </button>
-                <p className="text-[11px] text-center text-muted-foreground font-light">
-                  Your order is saved to the admin panel first, then WhatsApp opens with the full details pre-filled.
-                </p>
-
               </form>
             </div>
           </motion.div>
@@ -432,23 +327,10 @@ export function OrderNowModal({ open, onClose, product, defaultVariant, defaultQ
   );
 }
 
-const inp =
-  "w-full bg-transparent border-b border-border py-2.5 focus:border-champagne outline-none text-sm placeholder:text-muted-foreground/60";
-
+const inp = "w-full bg-transparent border-b border-border py-2.5 focus:border-champagne outline-none text-sm placeholder:text-muted-foreground/60";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="tracking-luxe text-[11px] text-champagne-deep block mb-1">{label}</span>
-      {children}
-    </label>
-  );
+  return <label className="block"><span className="tracking-luxe text-[11px] text-champagne-deep block mb-1">{label}</span>{children}</label>;
 }
-
 function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-ivory/70">{k}</span>
-      <span className="text-ivory">{v}</span>
-    </div>
-  );
+  return <div className="flex items-center justify-between"><span className="text-ivory/70">{k}</span><span className="text-ivory">{v}</span></div>;
 }

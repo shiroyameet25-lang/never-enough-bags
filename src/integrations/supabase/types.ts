@@ -89,6 +89,8 @@ export type Database = {
           type: string
           updated_at: string
         }
+        
+    
         Insert: {
           badge?: string | null
           brand: string
