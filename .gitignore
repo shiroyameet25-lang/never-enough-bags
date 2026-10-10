@@ -1,0 +1,56 @@
+# Environment variables & secrets (CRITICAL: Never commit credentials)
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+*.local
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Production build outputs & frameworks caches
+dist/
+**/dist/
+dist-ssr/
+**/dist-ssr/
+.output/
+**/.output/
+.vinxi/
+**/.vinxi/
+.tanstack/
+**/.tanstack/
+.nitro/
+**/.nitro/
+
+# Serverless & edge deployment caches
+.wrangler/
+**/.wrangler/
+.dev.vars
+**/.dev.vars
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Original un-restructured project & local backups (preserved safely)
+never-enough-bags-main/
+*.backup/
+.qodo/

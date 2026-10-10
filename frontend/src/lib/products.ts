@@ -1,0 +1,138 @@
+import { queryOptions } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export const BRANDS = [
+  { slug: "gucci", name: "Gucci" },
+  { slug: "louis-vuitton", name: "Louis Vuitton" },
+  { slug: "dior", name: "Dior" },
+  { slug: "prada", name: "Prada" },
+  { slug: "hermes", name: "Hermès" },
+  { slug: "chanel", name: "Chanel" },
+  { slug: "ysl", name: "YSL" },
+  { slug: "fendi", name: "Fendi" },
+  { slug: "burberry", name: "Burberry" },
+  { slug: "coach", name: "Coach" },
+  { slug: "michael-kors", name: "Michael Kors" },
+  { slug: "celine", name: "Celine" },
+  { slug: "bvlgari", name: "Bvlgari" },
+  { slug: "tory-burch", name: "Tory Burch" },
+  { slug: "miu-miu", name: "Miu Miu" },
+];
+
+export type ProductRow = {
+  id: string;
+  name: string;
+  brand: string;
+  brand_slug: string;
+  price: number | string;
+  discount_price: number | string | null;
+  image_url: string;
+  image_urls: string[];
+  description: string;
+  in_stock: boolean;
+  type: string;
+  dimensions: string;
+  badge: string | null;
+  created_at: string;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  brand: string;
+  brandSlug: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl: string;
+  imageUrls: string[];
+  description: string;
+  inStock: boolean;
+  type: string;
+  dimensions: string;
+  badge?: "new" | "sale" | "bestseller" | null;
+  createdAt: string;
+};
+
+export function mapProduct(r: ProductRow): Product {
+  const price = Number(r.price);
+  const discount = r.discount_price != null ? Number(r.discount_price) : null;
+  const hasDiscount = discount != null && discount > 0 && discount < price;
+  const gallery = (r.image_urls && r.image_urls.length > 0)
+    ? r.image_urls.filter(Boolean)
+    : (r.image_url ? [r.image_url] : []);
+  return {
+    id: r.id,
+    name: r.name,
+    brand: r.brand,
+    brandSlug: r.brand_slug,
+    price: hasDiscount ? discount! : price,
+    originalPrice: hasDiscount ? price : undefined,
+    imageUrl: gallery[0] ?? r.image_url ?? "",
+    imageUrls: gallery,
+    description: r.description,
+    inStock: r.in_stock === true || (r.in_stock as unknown) === "true",
+    type: r.type,
+    dimensions: r.dimensions,
+    badge: (r.badge as Product["badge"]) ?? null,
+    createdAt: r.created_at,
+  };
+}
+
+export async function fetchProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as ProductRow[]).map(mapProduct);
+}
+
+export async function fetchProduct(id: string): Promise<Product | null> {
+  const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ? mapProduct(data as unknown as ProductRow) : null;
+}
+
+export async function searchProducts(term: string): Promise<Product[]> {
+  const q = term.trim();
+  let query = supabase.from("products").select("*").order("created_at", { ascending: false });
+  if (q.length > 0) {
+    const esc = q.replace(/[%,()]/g, " ").trim();
+    const pattern = `%${esc}%`;
+    query = query.or(
+      `name.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern},brand.ilike.${pattern}`,
+    );
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as unknown as ProductRow[]).map(mapProduct);
+}
+
+export const productsQueryOptions = queryOptions({
+  queryKey: ["products"],
+  queryFn: fetchProducts,
+  staleTime: 1000 * 60 * 5, // 5 minutes fresh in cache
+  gcTime: 1000 * 60 * 30,    // 30 minutes garbage collection
+});
+
+export const productsSearchQueryOptions = (term: string) =>
+  queryOptions({
+    queryKey: ["products", "search", term.trim().toLowerCase()],
+    queryFn: () => searchProducts(term),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+
+export const productQueryOptions = (id: string) =>
+  queryOptions({
+    queryKey: ["products", id],
+    queryFn: () => fetchProduct(id),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30,
+  });
+
+export const formatINR = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
